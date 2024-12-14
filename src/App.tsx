@@ -11,7 +11,14 @@ import InvoiceList from './features/invoicing/InvoiceList';
 import ExpenseList from './features/expenses/ExpenseList';
 import ScheduleView from './features/schedule/ScheduleView';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0, // Consider all data stale immediately
+      cacheTime: 0, // Don't cache any data
+    },
+  },
+});
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -34,7 +41,8 @@ function App() {
               </PrivateRoute>
             }
           >
-            <Route index element={<WebsiteBuilder />} />
+            <Route index element={<Navigate to="/sitebuilder" />} />
+            <Route path="sitebuilder" element={<WebsiteBuilder />} />
             <Route path="crm" element={<LeadsList />} />
             <Route path="invoices" element={<InvoiceList />} />
             <Route path="expenses" element={<ExpenseList />} />
