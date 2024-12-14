@@ -177,10 +177,18 @@ export default function WebsiteBuilder() {
 
   const onSubmit = async (data: WebsiteContent) => {
     console.log('Form submitted with data:', data);
+    console.log('Current user:', user);
+    console.log('Form state:', formState);
+    
+    if (!user?.id) {
+      console.error('No user ID found');
+      return;
+    }
+    
     // Clean up services array to remove null values
     const cleanedData = {
       ...data,
-      services: data.services.filter(service => service !== null && service !== ''),
+      services: (data.services || []).filter(service => service !== null && service !== ''),
       contactInfo: {
         phone: data.contactInfo?.phone || '',
         email: data.contactInfo?.email || '',
@@ -194,10 +202,6 @@ export default function WebsiteBuilder() {
     } catch (error) {
       console.error('Error in onSubmit:', error);
     }
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    console.log('Form submit event triggered');
   };
 
   const addService = () => {
@@ -255,8 +259,13 @@ export default function WebsiteBuilder() {
         <WebsitePreview content={currentContent} />
       ) : (
         <form 
-          onSubmit={handleSubmit(onSubmit)} 
+          onSubmit={handleSubmit(onSubmit)}
           className="space-y-8"
+          onClick={(e) => {
+            console.log('Form clicked');
+            console.log('Form state:', formState);
+            console.log('Is form dirty:', formState.isDirty);
+          }}
         >
           <Card>
             <Tabs defaultValue="content">
