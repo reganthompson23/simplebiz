@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
 import { Card } from '../../components/ui/Card';
 import { toast } from '../../components/ui/Toast';
+import WebsitePreview from './WebsitePreview';
 
 const defaultContent: WebsiteContent = {
   businessName: '',
@@ -36,6 +37,13 @@ const defaultContent: WebsiteContent = {
   },
 };
 
+function generateSubdomain(businessName: string): string {
+  return businessName
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .slice(0, 63); // Max length for subdomains
+}
+
 export default function WebsiteBuilder() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -50,28 +58,40 @@ export default function WebsiteBuilder() {
         .eq('profile_id', user?.id)
         .single();
       
-      if (error) throw error;
-      return data as Website;
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
+      return data as Website | null;
     },
   });
 
-  const { register, handleSubmit, watch, setValue } = useForm<WebsiteContent>({
-    defaultValues: website?.content || defaultContent,
+  const { register, handleSubmit, watch, setValue, reset } = useForm<WebsiteContent>({
+    defaultValues: defaultContent,
   });
+
+  // Update form when website data loads
+  React.useEffect(() => {
+    if (website?.content) {
+      reset(website.content);
+    }
+  }, [website, reset]);
 
   const mutation = useMutation({
     mutationFn: async (content: WebsiteContent) => {
+      const subdomain = generateSubdomain(content.businessName);
+      
       if (website) {
         // Update existing website
         const { error } = await supabase
           .from('websites')
-          .update({ content, updated_at: new Date().toISOString() })
+          .update({ 
+            content, 
+            subdomain,
+            updated_at: new Date().toISOString() 
+          })
           .eq('id', website.id);
         
         if (error) throw error;
       } else {
         // Create new website
-        const subdomain = user?.email?.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || '';
         const { error } = await supabase
           .from('websites')
           .insert([{
@@ -103,10 +123,19 @@ export default function WebsiteBuilder() {
 
   const publishMutation = useMutation({
     mutationFn: async () => {
+      if (!website) throw new Error('No website to publish');
+      
+      // First save any pending changes
+      await mutation.mutateAsync(watch());
+      
+      // Then update published status
       const { error } = await supabase
         .from('websites')
-        .update({ published: true })
-        .eq('id', website?.id);
+        .update({ 
+          published: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', website.id);
       
       if (error) throw error;
     },
@@ -114,8 +143,15 @@ export default function WebsiteBuilder() {
       queryClient.invalidateQueries({ queryKey: ['website'] });
       toast({
         title: 'Success',
-        description: 'Your website has been published.',
+        description: 'Your website has been published and is now live.',
         type: 'success',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        type: 'error',
       });
     },
   });
@@ -138,6 +174,9 @@ export default function WebsiteBuilder() {
     return <div>Loading...</div>;
   }
 
+  const currentContent = watch();
+  const previewSubdomain = generateSubdomain(currentContent.businessName);
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
@@ -149,20 +188,18 @@ export default function WebsiteBuilder() {
           >
             {previewMode ? 'Edit Mode' : 'Preview Mode'}
           </Button>
-          {website && (
-            <Button
-              variant="primary"
-              onClick={() => publishMutation.mutate()}
-              disabled={publishMutation.isPending}
-            >
-              {website.published ? 'Published' : 'Publish Website'}
-            </Button>
-          )}
+          <Button
+            variant="primary"
+            onClick={() => publishMutation.mutate()}
+            disabled={publishMutation.isPending || !currentContent.businessName}
+          >
+            {publishMutation.isPending ? 'Publishing...' : (website?.published ? 'Published' : 'Publish Website')}
+          </Button>
         </div>
       </div>
 
       {previewMode ? (
-        <WebsitePreview content={watch()} />
+        <WebsitePreview content={currentContent} />
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           <Card>
@@ -179,7 +216,7 @@ export default function WebsiteBuilder() {
                     <label className="block text-sm font-medium mb-2">
                       Business Name
                     </label>
-                    <Input {...register('businessName')} />
+                    <Input {...register('businessName', { required: true })} />
                   </div>
 
                   <div>
@@ -321,21 +358,24 @@ export default function WebsiteBuilder() {
         </form>
       )}
 
-      {website && (
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600">
-            Your website will be available at:{' '}
-            <a
-              href={`https://${website.subdomain}.simplebiz.site`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              {`https://${website.subdomain}.simplebiz.site`}
-            </a>
-          </p>
-        </div>
-      )}
+      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+        <p className="text-sm text-gray-600">
+          Your website will be available at:{' '}
+          <a
+            href={`https://${previewSubdomain}.simplebiz.site`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            {`https://${previewSubdomain}.simplebiz.site`}
+          </a>
+          {!currentContent.businessName && (
+            <span className="text-red-500 ml-2">
+              (Enter a business name to generate your website URL)
+            </span>
+          )}
+        </p>
+      </div>
     </div>
   );
 }
