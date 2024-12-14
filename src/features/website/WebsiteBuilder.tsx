@@ -399,6 +399,7 @@ export default function WebsiteBuilder() {
                     <Input
                       type="color"
                       {...register('theme.primaryColor')}
+                      value={watch('theme.primaryColor') || '#2563eb'}
                       onChange={(e) => {
                         console.log('Primary color changed:', e.target.value);
                         setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
@@ -412,6 +413,7 @@ export default function WebsiteBuilder() {
                     <Input
                       type="color"
                       {...register('theme.secondaryColor')}
+                      value={watch('theme.secondaryColor') || '#1e40af'}
                       onChange={(e) => {
                         console.log('Secondary color changed:', e.target.value);
                         setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
