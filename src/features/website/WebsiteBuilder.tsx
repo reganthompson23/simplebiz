@@ -216,22 +216,25 @@ export default function WebsiteBuilder() {
       return;
     }
     
-    // Clean up services array to remove null values
-    const cleanedData = {
-      ...data,
-      services: (data.services || []).filter(service => service !== null && service !== ''),
-      contactInfo: {
-        phone: data.contactInfo?.phone || '',
-        email: data.contactInfo?.email || '',
-        address: data.contactInfo?.address || '',
-      }
-    };
-    console.log('Cleaned data for submission:', cleanedData);
-    
+    setIsSaving(true);
     try {
+      // Clean up services array to remove null values
+      const cleanedData = {
+        ...data,
+        services: (data.services || []).filter(service => service !== null && service !== ''),
+        contactInfo: {
+          phone: data.contactInfo?.phone || '',
+          email: data.contactInfo?.email || '',
+          address: data.contactInfo?.address || '',
+        }
+      };
+      console.log('Cleaned data for submission:', cleanedData);
+      
       await mutation.mutateAsync(cleanedData);
     } catch (error) {
       console.error('Error in onSubmit:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -507,11 +510,11 @@ export default function WebsiteBuilder() {
             <Button
               type="submit"
               variant="primary"
-              disabled={mutation.isPending}
+              disabled={isSaving}
               onClick={handleSubmit(onSubmit)}
               className="hover:bg-blue-700 active:bg-blue-800 transition-colors"
             >
-              {mutation.isPending ? (
+              {isSaving ? (
                 <span className="flex items-center gap-2">
                   <span className="animate-spin">⌛</span> 
                   Saving...
