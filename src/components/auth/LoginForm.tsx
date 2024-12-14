@@ -33,7 +33,7 @@ export default function LoginForm() {
             data: {
               business_name: data.business_name,
             },
-            emailRedirectTo: 'https://simplebizites.netlify.app' // Use production URL
+            emailRedirectTo: 'https://simplebizites.netlify.app/auth/callback'
           },
         });
 

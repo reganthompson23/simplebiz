@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './hooks/useAuth';
 import Layout from './components/Layout';
 import LoginForm from './components/auth/LoginForm';
+import AuthCallback from './components/auth/AuthCallback';
 import WebsiteBuilder from './features/website/WebsiteBuilder';
 import LeadsList from './features/crm/LeadsList';
 import InvoiceList from './features/invoicing/InvoiceList';
@@ -23,6 +24,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginForm />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           
           <Route
             path="/"
