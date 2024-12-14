@@ -2,7 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Website, WebsiteContent } from './types';
+import { Website, WebsiteContent, defaultContent } from './types';
 import { useAuth } from '../../hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/Tabs';
 import { Button } from '../../components/ui/Button';
@@ -12,32 +12,8 @@ import { Card } from '../../components/ui/Card';
 import { toast } from '../../components/ui/Toast';
 import WebsitePreview from './WebsitePreview';
 
-const defaultContent: WebsiteContent = {
-  businessName: '',
-  aboutUs: '',
-  services: [''],
-  contactInfo: {
-    phone: '',
-    email: '',
-    address: '',
-  },
-  leadForm: {
-    enabled: true,
-    fields: {
-      name: true,
-      email: true,
-      phone: true,
-      message: true,
-    },
-  },
-  theme: {
-    primaryColor: '#2563eb',
-    secondaryColor: '#1e40af',
-    fontFamily: 'Inter',
-  },
-};
-
-function generateSubdomain(businessName: string): string {
+function generateSubdomain(businessName: string | undefined): string {
+  if (!businessName) return '';
   return businessName
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '')
@@ -49,18 +25,21 @@ export default function WebsiteBuilder() {
   const queryClient = useQueryClient();
   const [previewMode, setPreviewMode] = React.useState(false);
   
-  const { data: website, isLoading } = useQuery({
+  const { data: website, isLoading, error: websiteError } = useQuery({
     queryKey: ['website'],
     queryFn: async () => {
+      if (!user?.id) return null;
+      
       const { data, error } = await supabase
         .from('websites')
         .select('*')
-        .eq('profile_id', user?.id)
+        .eq('profile_id', user.id)
         .single();
       
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
       return data as Website | null;
     },
+    enabled: !!user?.id,
   });
 
   const { register, handleSubmit, watch, setValue, reset } = useForm<WebsiteContent>({
@@ -76,6 +55,8 @@ export default function WebsiteBuilder() {
 
   const mutation = useMutation({
     mutationFn: async (content: WebsiteContent) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
       const subdomain = generateSubdomain(content.businessName);
       
       if (website) {
@@ -95,7 +76,7 @@ export default function WebsiteBuilder() {
         const { error } = await supabase
           .from('websites')
           .insert([{
-            profile_id: user?.id,
+            profile_id: user.id,
             subdomain,
             content,
             published: false,
@@ -124,6 +105,7 @@ export default function WebsiteBuilder() {
   const publishMutation = useMutation({
     mutationFn: async () => {
       if (!website) throw new Error('No website to publish');
+      if (!user?.id) throw new Error('User not authenticated');
       
       // First save any pending changes
       await mutation.mutateAsync(watch());
@@ -135,7 +117,8 @@ export default function WebsiteBuilder() {
           published: true,
           updated_at: new Date().toISOString()
         })
-        .eq('id', website.id);
+        .eq('id', website.id)
+        .eq('profile_id', user.id);
       
       if (error) throw error;
     },
@@ -161,17 +144,29 @@ export default function WebsiteBuilder() {
   };
 
   const addService = () => {
-    const services = watch('services');
+    const services = watch('services') || [];
     setValue('services', [...services, '']);
   };
 
   const removeService = (index: number) => {
-    const services = watch('services');
+    const services = watch('services') || [];
     setValue('services', services.filter((_, i) => i !== index));
   };
 
   if (isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (websiteError) {
+    return (
+      <div className="p-4 text-red-600">
+        Error loading website: {websiteError.message}
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <div>Please log in to access the website builder.</div>;
   }
 
   const currentContent = watch();
