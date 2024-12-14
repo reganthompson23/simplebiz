@@ -314,15 +314,11 @@ export default function WebsiteBuilder() {
                     </label>
                     <Input 
                       {...register('businessName')}
+                      value={watch('businessName') || ''}
                       onChange={(e) => {
                         const value = e.target.value;
                         console.log('Input change event value:', value);
-                        setValue('businessName', value);
-                        console.log('Form values after setValue:', watch());
-                      }}
-                      onBlur={(e) => {
-                        console.log('Input blur event value:', e.target.value);
-                        console.log('Current form values:', watch());
+                        setValue('businessName', value, { shouldDirty: true });
                       }}
                     />
                   </div>
@@ -331,16 +327,28 @@ export default function WebsiteBuilder() {
                     <label className="block text-sm font-medium mb-2">
                       About Us
                     </label>
-                    <Textarea {...register('aboutUs')} />
+                    <Textarea 
+                      {...register('aboutUs')}
+                      value={watch('aboutUs') || ''}
+                      onChange={(e) => setValue('aboutUs', e.target.value, { shouldDirty: true })}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Services
                     </label>
-                    {watch('services').map((_, index) => (
+                    {(watch('services') || ['']).map((service, index) => (
                       <div key={index} className="flex gap-2 mb-2">
-                        <Input {...register(`services.${index}`)} />
+                        <Input 
+                          {...register(`services.${index}`)}
+                          value={service || ''}
+                          onChange={(e) => {
+                            const services = [...(watch('services') || [''])];
+                            services[index] = e.target.value;
+                            setValue('services', services, { shouldDirty: true });
+                          }}
+                        />
                         <Button
                           type="button"
                           variant="outline"
