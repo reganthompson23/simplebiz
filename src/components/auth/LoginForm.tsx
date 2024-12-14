@@ -1,14 +1,16 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { supabase } from '../../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormData {
   email: string;
   password: string;
-  businessName?: string;
+  business_name?: string;
 }
 
 export default function LoginForm() {
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = React.useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>();
   const [error, setError] = React.useState<string | null>(null);
@@ -16,25 +18,33 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       if (isSignUp) {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
+          options: {
+            data: {
+              business_name: data.business_name,
+            },
+          },
         });
 
         if (signUpError) throw signUpError;
 
-        // Create profile after successful signup
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: (await supabase.auth.getUser()).data.user?.id,
-              email: data.email,
-              businessName: data.businessName,
-            },
-          ]);
+        if (authData.user) {
+          // Create profile after successful signup
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: authData.user.id,
+                business_name: data.business_name,
+                contact_email: data.email,
+              },
+            ]);
 
-        if (profileError) throw profileError;
+          if (profileError) throw profileError;
+          navigate('/');
+        }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: data.email,
@@ -42,6 +52,7 @@ export default function LoginForm() {
         });
 
         if (signInError) throw signInError;
+        navigate('/');
       }
     } catch (err: any) {
       setError(err.message);
@@ -67,17 +78,17 @@ export default function LoginForm() {
           <div className="rounded-md shadow-sm space-y-4">
             {isSignUp && (
               <div>
-                <label htmlFor="businessName" className="sr-only">Business Name</label>
+                <label htmlFor="business_name" className="sr-only">Business Name</label>
                 <input
-                  {...register('businessName', { 
+                  {...register('business_name', { 
                     required: isSignUp ? 'Business name is required' : false 
                   })}
                   type="text"
                   className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="Business Name"
                 />
-                {errors.businessName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.businessName.message}</p>
+                {errors.business_name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.business_name.message}</p>
                 )}
               </div>
             )}

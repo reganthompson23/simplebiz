@@ -85,6 +85,7 @@ alter table schedules enable row level security;
 -- Create policies
 create policy "Users can view own profile" on profiles for select using (auth.uid() = id);
 create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
+create policy "Users can insert own profile" on profiles for insert with check (auth.uid() = id);
 
 create policy "Users can view own website" on websites for select using (profile_id = auth.uid());
 create policy "Users can insert own website" on websites for insert with check (profile_id = auth.uid());
@@ -116,7 +117,11 @@ create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.profiles (id, business_name, contact_email)
-  values (new.id, '', new.email);
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'business_name', ''),
+    new.email
+  );
   return new;
 end;
 $$ language plpgsql security definer;
