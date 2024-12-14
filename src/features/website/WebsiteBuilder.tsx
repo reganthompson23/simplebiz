@@ -44,9 +44,15 @@ export default function WebsiteBuilder() {
     enabled: !!user?.id,
   });
 
-  const { register, handleSubmit, watch, setValue, reset } = useForm<WebsiteContent>({
+  const { register, handleSubmit, watch, setValue, reset, formState } = useForm<WebsiteContent>({
     defaultValues: defaultContent,
   });
+
+  // Log form state changes
+  React.useEffect(() => {
+    console.log('Form state:', formState);
+    console.log('Current form values:', watch());
+  }, [formState, watch]);
 
   // Update form and current content when website data loads
   React.useEffect(() => {
@@ -70,34 +76,42 @@ export default function WebsiteBuilder() {
       if (!user?.id) throw new Error('User not authenticated');
       
       const subdomain = generateSubdomain(content.businessName);
+      console.log('Saving content:', content);
       
       if (website) {
+        console.log('Updating existing website:', website.id);
         // Update existing website
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('websites')
           .update({ 
             content, 
             subdomain,
             updated_at: new Date().toISOString() 
           })
-          .eq('id', website.id);
+          .eq('id', website.id)
+          .select();
         
+        console.log('Update result:', { data, error });
         if (error) throw error;
       } else {
+        console.log('Creating new website');
         // Create new website
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('websites')
           .insert([{
             profile_id: user.id,
             subdomain,
             content,
             published: false,
-          }]);
+          }])
+          .select();
         
+        console.log('Insert result:', { data, error });
         if (error) throw error;
       }
     },
     onSuccess: () => {
+      console.log('Mutation succeeded, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['website'] });
       toast({
         title: 'Success',
@@ -106,6 +120,7 @@ export default function WebsiteBuilder() {
       });
     },
     onError: (error) => {
+      console.error('Mutation failed:', error);
       toast({
         title: 'Error',
         description: error.message,
@@ -155,7 +170,16 @@ export default function WebsiteBuilder() {
   });
 
   const onSubmit = (data: WebsiteContent) => {
-    mutation.mutate(data);
+    console.log('Form submitted with data:', data);
+    try {
+      mutation.mutate(data);
+    } catch (error) {
+      console.error('Error in onSubmit:', error);
+    }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    console.log('Form submit event triggered');
   };
 
   const addService = () => {
@@ -212,7 +236,17 @@ export default function WebsiteBuilder() {
       {previewMode ? (
         <WebsitePreview content={currentContent} />
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault(); // Prevent default form submission
+            console.log('Raw form submit triggered');
+            handleSubmit((data) => {
+              console.log('Form submitted with data:', data);
+              onSubmit(data);
+            })(e);
+          }} 
+          className="space-y-8"
+        >
           <Card>
             <Tabs defaultValue="content">
               <TabsList>
@@ -227,7 +261,12 @@ export default function WebsiteBuilder() {
                     <label className="block text-sm font-medium mb-2">
                       Business Name
                     </label>
-                    <Input {...register('businessName', { required: true })} />
+                    <Input 
+                      {...register('businessName', { 
+                        required: true,
+                        onChange: (e) => console.log('Business name changed:', e.target.value)
+                      })} 
+                    />
                   </div>
 
                   <div>
@@ -357,7 +396,19 @@ export default function WebsiteBuilder() {
             </Tabs>
           </Card>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                console.log('Manual save clicked');
+                const currentData = watch();
+                console.log('Current form data:', currentData);
+                onSubmit(currentData);
+              }}
+            >
+              Manual Save
+            </Button>
             <Button
               type="submit"
               variant="primary"
