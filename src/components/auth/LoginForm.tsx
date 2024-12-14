@@ -33,14 +33,14 @@ export default function LoginForm() {
             data: {
               business_name: data.business_name,
             },
-            emailRedirectTo: 'https://simplebizites.netlify.app/auth/callback'
+            emailConfirm: false
           },
         });
 
         if (signUpError) throw signUpError;
         
-        // Show success message and ask user to verify email
-        setError('Please check your email to verify your account. After verification, you can sign in.');
+        // Automatically navigate to home page after successful signup
+        navigate('/');
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: data.email,
