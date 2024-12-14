@@ -372,19 +372,40 @@ export default function WebsiteBuilder() {
                       <label className="block text-sm font-medium mb-2">
                         Phone
                       </label>
-                      <Input {...register('contactInfo.phone')} />
+                      <Input 
+                        {...register('contactInfo.phone')}
+                        value={watch('contactInfo.phone') || ''}
+                        onChange={(e) => {
+                          console.log('Phone changed:', e.target.value);
+                          setValue('contactInfo.phone', e.target.value, { shouldDirty: true });
+                        }}
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
                         Email
                       </label>
-                      <Input {...register('contactInfo.email')} />
+                      <Input 
+                        {...register('contactInfo.email')}
+                        value={watch('contactInfo.email') || ''}
+                        onChange={(e) => {
+                          console.log('Email changed:', e.target.value);
+                          setValue('contactInfo.email', e.target.value, { shouldDirty: true });
+                        }}
+                      />
                     </div>
                     <div className="col-span-2">
                       <label className="block text-sm font-medium mb-2">
                         Address
                       </label>
-                      <Input {...register('contactInfo.address')} />
+                      <Input 
+                        {...register('contactInfo.address')}
+                        value={watch('contactInfo.address') || ''}
+                        onChange={(e) => {
+                          console.log('Address changed:', e.target.value);
+                          setValue('contactInfo.address', e.target.value, { shouldDirty: true });
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
