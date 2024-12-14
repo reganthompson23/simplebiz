@@ -10,32 +10,27 @@ export default function AuthCallback() {
     const handleCallback = async () => {
       try {
         // Get the token from the URL
-        const hash = window.location.hash;
         const query = new URLSearchParams(window.location.search);
         const token = query.get('token');
-        const refreshToken = query.get('refresh_token');
         const type = query.get('type');
 
         if (!token) {
           throw new Error('No token found in URL');
         }
 
-        if (type === 'signup') {
-          // Handle signup confirmation
-          const { error } = await supabase.auth.verifyOtp({
+        // Get the session from Supabase
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+
+        if (!session) {
+          // If no session, try to verify the token
+          const { error: verifyError } = await supabase.auth.verifyOtp({
             token,
-            type: 'signup',
+            type: type === 'signup' ? 'signup' : 'recovery',
           });
 
-          if (error) throw error;
-        } else if (type === 'recovery') {
-          // Handle password reset
-          const { error } = await supabase.auth.verifyOtp({
-            token,
-            type: 'recovery',
-          });
-
-          if (error) throw error;
+          if (verifyError) throw verifyError;
         }
 
         // Redirect to home page after successful verification
