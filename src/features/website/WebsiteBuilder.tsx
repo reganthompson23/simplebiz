@@ -72,46 +72,55 @@ export default function WebsiteBuilder() {
 
   const mutation = useMutation({
     mutationFn: async (content: WebsiteContent) => {
-      setIsSaving(true);
       if (!user?.id) throw new Error('User not authenticated');
       
       const subdomain = generateSubdomain(content.businessName);
-      console.log('Saving content:', content);
+      console.log('Attempting to save content:', content);
       
-      if (website) {
-        console.log('Updating existing website:', website.id);
-        // Update existing website
-        const { data, error } = await supabase
-          .from('websites')
-          .update({ 
-            content, 
-            subdomain,
-            updated_at: new Date().toISOString() 
-          })
-          .eq('id', website.id)
-          .select();
-        
-        console.log('Update result:', { data, error });
-        if (error) throw error;
-      } else {
-        console.log('Creating new website');
-        // Create new website
-        const { data, error } = await supabase
-          .from('websites')
-          .insert([{
-            profile_id: user.id,
-            subdomain,
-            content,
-            published: false,
-          }])
-          .select();
-        
-        console.log('Insert result:', { data, error });
-        if (error) throw error;
+      try {
+        if (website) {
+          console.log('Updating existing website:', website.id);
+          const { data, error } = await supabase
+            .from('websites')
+            .update({ 
+              content, 
+              subdomain,
+              updated_at: new Date().toISOString() 
+            })
+            .eq('id', website.id)
+            .select()
+            .single();
+          
+          console.log('Update result:', { data, error });
+          if (error) throw error;
+          return data;
+        } else {
+          console.log('Creating new website for user:', user.id);
+          const { data, error } = await supabase
+            .from('websites')
+            .insert([{
+              profile_id: user.id,
+              subdomain,
+              content,
+              published: false,
+            }])
+            .select()
+            .single();
+          
+          console.log('Insert result:', { data, error });
+          if (error) throw error;
+          return data;
+        }
+      } catch (error) {
+        console.error('Database operation failed:', error);
+        throw error;
       }
     },
-    onSuccess: () => {
-      console.log('Mutation succeeded, invalidating queries');
+    onMutate: () => {
+      console.log('Mutation starting...');
+    },
+    onSuccess: (data) => {
+      console.log('Mutation succeeded:', data);
       queryClient.invalidateQueries({ queryKey: ['website'] });
       toast({
         title: 'Success',
@@ -119,16 +128,13 @@ export default function WebsiteBuilder() {
         type: 'success',
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Mutation failed:', error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to save website',
         type: 'error',
       });
-    },
-    onSettled: () => {
-      setIsSaving(false);
     },
   });
 
@@ -169,10 +175,22 @@ export default function WebsiteBuilder() {
     },
   });
 
-  const onSubmit = (data: WebsiteContent) => {
+  const onSubmit = async (data: WebsiteContent) => {
     console.log('Form submitted with data:', data);
+    // Clean up services array to remove null values
+    const cleanedData = {
+      ...data,
+      services: data.services.filter(service => service !== null && service !== ''),
+      contactInfo: {
+        phone: data.contactInfo?.phone || '',
+        email: data.contactInfo?.email || '',
+        address: data.contactInfo?.address || '',
+      }
+    };
+    console.log('Cleaned data for submission:', cleanedData);
+    
     try {
-      mutation.mutate(data);
+      await mutation.mutateAsync(cleanedData);
     } catch (error) {
       console.error('Error in onSubmit:', error);
     }
@@ -237,14 +255,7 @@ export default function WebsiteBuilder() {
         <WebsitePreview content={currentContent} />
       ) : (
         <form 
-          onSubmit={(e) => {
-            e.preventDefault(); // Prevent default form submission
-            console.log('Raw form submit triggered');
-            handleSubmit((data) => {
-              console.log('Form submitted with data:', data);
-              onSubmit(data);
-            })(e);
-          }} 
+          onSubmit={handleSubmit(onSubmit)} 
           className="space-y-8"
         >
           <Card>
@@ -398,23 +409,19 @@ export default function WebsiteBuilder() {
 
           <div className="flex justify-end gap-4">
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                console.log('Manual save clicked');
-                const currentData = watch();
-                console.log('Current form data:', currentData);
-                onSubmit(currentData);
-              }}
-            >
-              Manual Save
-            </Button>
-            <Button
               type="submit"
               variant="primary"
-              disabled={isSaving}
+              disabled={mutation.isPending || !formState.isDirty}
+              className="hover:bg-blue-700 active:bg-blue-800 transition-colors"
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {mutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">⌛</span> 
+                  Saving...
+                </span>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </div>
         </form>
