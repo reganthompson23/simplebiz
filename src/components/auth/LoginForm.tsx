@@ -33,7 +33,7 @@ export default function LoginForm() {
             data: {
               business_name: data.business_name,
             },
-            emailRedirectTo: window.location.origin // This will redirect back to your app
+            emailRedirectTo: 'https://simplebizites.netlify.app' // Use production URL
           },
         });
 
