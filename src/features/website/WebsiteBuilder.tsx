@@ -208,8 +208,6 @@ export default function WebsiteBuilder() {
 
   const onSubmit = async (data: WebsiteContent) => {
     console.log('Form submitted with data:', data);
-    console.log('Current user:', user);
-    console.log('Form state:', formState);
     
     if (!user?.id) {
       console.error('No user ID found');
@@ -226,13 +224,37 @@ export default function WebsiteBuilder() {
           phone: data.contactInfo?.phone || '',
           email: data.contactInfo?.email || '',
           address: data.contactInfo?.address || '',
+        },
+        theme: {
+          primaryColor: data.theme?.primaryColor || '#2563eb',
+          secondaryColor: data.theme?.secondaryColor || '#1e40af',
+          fontFamily: data.theme?.fontFamily || 'Inter',
+        },
+        leadForm: {
+          enabled: data.leadForm?.enabled ?? true,
+          fields: {
+            name: data.leadForm?.fields?.name ?? true,
+            email: data.leadForm?.fields?.email ?? true,
+            phone: data.leadForm?.fields?.phone ?? true,
+            message: data.leadForm?.fields?.message ?? true,
+          }
         }
       };
       console.log('Cleaned data for submission:', cleanedData);
       
-      await mutation.mutateAsync(cleanedData);
+      const result = await mutation.mutateAsync(cleanedData);
+      console.log('Save completed:', result);
+      
+      // Update the form with the saved data
+      reset(result.content);
+      setCurrentContent(result.content);
     } catch (error) {
       console.error('Error in onSubmit:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save changes. Please try again.',
+        type: 'error',
+      });
     } finally {
       setIsSaving(false);
     }
