@@ -24,6 +24,8 @@ export default function WebsiteBuilder() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [previewMode, setPreviewMode] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [currentContent, setCurrentContent] = React.useState<WebsiteContent>(defaultContent);
   
   const { data: website, isLoading, error: websiteError } = useQuery({
     queryKey: ['website'],
@@ -36,7 +38,7 @@ export default function WebsiteBuilder() {
         .eq('profile_id', user.id)
         .single();
       
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
+      if (error && error.code !== 'PGRST116') throw error;
       return data as Website | null;
     },
     enabled: !!user?.id,
@@ -46,15 +48,25 @@ export default function WebsiteBuilder() {
     defaultValues: defaultContent,
   });
 
-  // Update form when website data loads
+  // Update form and current content when website data loads
   React.useEffect(() => {
     if (website?.content) {
       reset(website.content);
+      setCurrentContent(website.content);
     }
   }, [website, reset]);
 
+  // Update current content when form values change
+  React.useEffect(() => {
+    const subscription = watch((value) => {
+      setCurrentContent(value as WebsiteContent);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
   const mutation = useMutation({
     mutationFn: async (content: WebsiteContent) => {
+      setIsSaving(true);
       if (!user?.id) throw new Error('User not authenticated');
       
       const subdomain = generateSubdomain(content.businessName);
@@ -99,6 +111,9 @@ export default function WebsiteBuilder() {
         description: error.message,
         type: 'error',
       });
+    },
+    onSettled: () => {
+      setIsSaving(false);
     },
   });
 
@@ -169,8 +184,9 @@ export default function WebsiteBuilder() {
     return <div>Please log in to access the website builder.</div>;
   }
 
-  const currentContent = watch();
   const previewSubdomain = generateSubdomain(currentContent.businessName);
+  const baseUrl = 'https://simplebizsites.netlify.app';
+  const websiteUrl = `${baseUrl}/sites/${previewSubdomain}`;
 
   return (
     <div className="container mx-auto py-8">
@@ -345,9 +361,9 @@ export default function WebsiteBuilder() {
             <Button
               type="submit"
               variant="primary"
-              disabled={mutation.isPending}
+              disabled={isSaving}
             >
-              {mutation.isPending ? 'Saving...' : 'Save Changes'}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>
@@ -357,12 +373,12 @@ export default function WebsiteBuilder() {
         <p className="text-sm text-gray-600">
           Your website will be available at:{' '}
           <a
-            href={`https://${previewSubdomain}.simplebiz.site`}
+            href={websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:underline"
           >
-            {`https://${previewSubdomain}.simplebiz.site`}
+            {websiteUrl}
           </a>
           {!currentContent.businessName && (
             <span className="text-red-500 ml-2">
