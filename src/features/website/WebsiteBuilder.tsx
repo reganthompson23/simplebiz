@@ -45,13 +45,37 @@ export default function WebsiteBuilder() {
   });
 
   const { register, handleSubmit, watch, setValue, reset, formState } = useForm<WebsiteContent>({
-    defaultValues: defaultContent,
+    defaultValues: {
+      businessName: '',
+      aboutUs: '',
+      services: [''],
+      contactInfo: {
+        phone: '',
+        email: '',
+        address: '',
+      },
+      leadForm: {
+        enabled: true,
+        fields: {
+          name: true,
+          email: true,
+          phone: true,
+          message: true,
+        },
+      },
+      theme: {
+        primaryColor: '#2563eb',
+        secondaryColor: '#1e40af',
+        fontFamily: 'Inter',
+      },
+    }
   });
 
   // Log form state changes
   React.useEffect(() => {
     console.log('Form state:', formState);
     console.log('Current form values:', watch());
+    console.log('Business name value:', watch('businessName'));
   }, [formState, watch]);
 
   // Update form and current content when website data loads
