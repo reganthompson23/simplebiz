@@ -15,6 +15,14 @@ export default function LoginForm() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>();
   const [error, setError] = React.useState<string | null>(null);
 
+  // Check for email verification status on mount
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'access_denied' && params.get('error_description')?.includes('Email link is invalid or has expired')) {
+      setError('Verification link has expired. Please try signing up again.');
+    }
+  }, []);
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       if (isSignUp) {
@@ -25,13 +33,14 @@ export default function LoginForm() {
             data: {
               business_name: data.business_name,
             },
+            emailRedirectTo: window.location.origin // This will redirect back to your app
           },
         });
 
         if (signUpError) throw signUpError;
         
         // Show success message and ask user to verify email
-        setError('Please check your email to verify your account.');
+        setError('Please check your email to verify your account. After verification, you can sign in.');
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: data.email,
