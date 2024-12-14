@@ -28,30 +28,23 @@ export default function LoginForm() {
     try {
       if (isSignUp) {
         console.log('Attempting signup...');
-        const { error: signUpError } = await supabase.auth.signUp({
+        // Try to sign up directly without email confirmation
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
           options: {
             data: {
-              business_name: data.business_name,
+              business_name: data.business_name || '',
             },
-            emailRedirectTo: window.location.origin,
-            emailVerification: false
-          },
+          }
         });
 
         if (signUpError) {
           console.error('Signup error:', signUpError);
           throw signUpError;
         }
-        
-        // Automatically sign in after signup
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
 
-        if (signInError) throw signInError;
+        console.log('Signup successful:', signUpData);
         navigate('/');
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -63,6 +56,7 @@ export default function LoginForm() {
         navigate('/');
       }
     } catch (err: any) {
+      console.error('Auth error:', err);
       setError(err.message);
     }
   };
