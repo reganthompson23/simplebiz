@@ -24,8 +24,10 @@ export default function LoginForm() {
   }, []);
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log('Form submitted with:', data);
     try {
       if (isSignUp) {
+        console.log('Attempting signup...');
         const { error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
@@ -33,13 +35,23 @@ export default function LoginForm() {
             data: {
               business_name: data.business_name,
             },
-            emailConfirm: false
+            emailRedirectTo: window.location.origin,
+            emailVerification: false
           },
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error('Signup error:', signUpError);
+          throw signUpError;
+        }
         
-        // Automatically navigate to home page after successful signup
+        // Automatically sign in after signup
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (signInError) throw signInError;
         navigate('/');
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
