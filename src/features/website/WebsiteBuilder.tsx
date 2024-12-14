@@ -420,7 +420,8 @@ export default function WebsiteBuilder() {
             <Button
               type="submit"
               variant="primary"
-              disabled={mutation.isPending || !formState.isDirty}
+              disabled={mutation.isPending}
+              onClick={handleSubmit(onSubmit)}
               className="hover:bg-blue-700 active:bg-blue-800 transition-colors"
             >
               {mutation.isPending ? (
