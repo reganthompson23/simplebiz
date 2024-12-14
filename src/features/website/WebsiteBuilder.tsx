@@ -81,6 +81,7 @@ export default function WebsiteBuilder() {
   // Update form and current content when website data loads
   React.useEffect(() => {
     if (website?.content) {
+      console.log('Loading website content into form:', website.content);
       reset(website.content);
       setCurrentContent(website.content);
     }
@@ -89,7 +90,10 @@ export default function WebsiteBuilder() {
   // Update current content when form values change
   React.useEffect(() => {
     const subscription = watch((value) => {
-      setCurrentContent(value as WebsiteContent);
+      console.log('Form values changed:', value);
+      if (value) {
+        setCurrentContent(value as WebsiteContent);
+      }
     });
     return () => subscription.unsubscribe();
   }, [watch]);
@@ -117,6 +121,9 @@ export default function WebsiteBuilder() {
           
           console.log('Update result:', { data, error });
           if (error) throw error;
+          
+          // Update the form with the saved data
+          reset(data.content);
           return data;
         } else {
           console.log('Creating new website for user:', user.id);
@@ -384,6 +391,10 @@ export default function WebsiteBuilder() {
                     <Input
                       type="color"
                       {...register('theme.primaryColor')}
+                      onChange={(e) => {
+                        console.log('Primary color changed:', e.target.value);
+                        setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
+                      }}
                     />
                   </div>
                   <div>
@@ -393,8 +404,22 @@ export default function WebsiteBuilder() {
                     <Input
                       type="color"
                       {...register('theme.secondaryColor')}
+                      onChange={(e) => {
+                        console.log('Secondary color changed:', e.target.value);
+                        setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
+                      }}
                     />
                   </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setValue('theme.primaryColor', '#2563eb');
+                      setValue('theme.secondaryColor', '#1e40af');
+                    }}
+                  >
+                    Reset Colors
+                  </Button>
                 </div>
               </TabsContent>
 
