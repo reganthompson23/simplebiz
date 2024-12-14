@@ -306,10 +306,17 @@ export default function WebsiteBuilder() {
                       Business Name
                     </label>
                     <Input 
-                      {...register('businessName', { 
-                        required: true,
-                        onChange: (e) => console.log('Business name changed:', e.target.value)
-                      })} 
+                      {...register('businessName')}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        console.log('Input change event value:', value);
+                        setValue('businessName', value);
+                        console.log('Form values after setValue:', watch());
+                      }}
+                      onBlur={(e) => {
+                        console.log('Input blur event value:', e.target.value);
+                        console.log('Current form values:', watch());
+                      }}
                     />
                   </div>
 
