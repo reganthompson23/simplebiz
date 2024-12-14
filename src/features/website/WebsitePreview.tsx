@@ -7,13 +7,29 @@ interface WebsitePreviewProps {
 
 export default function WebsitePreview({ content }: WebsitePreviewProps) {
   const {
-    businessName,
-    aboutUs,
-    services,
-    contactInfo,
-    leadForm,
-    theme,
-  } = content;
+    businessName = '',
+    aboutUs = '',
+    services = [],
+    contactInfo = {
+      phone: '',
+      email: '',
+      address: '',
+    },
+    leadForm = {
+      enabled: true,
+      fields: {
+        name: true,
+        email: true,
+        phone: true,
+        message: true,
+      },
+    },
+    theme = {
+      primaryColor: '#2563eb',
+      secondaryColor: '#1e40af',
+      fontFamily: 'Inter',
+    },
+  } = content || {};
 
   return (
     <div 
