@@ -10,26 +10,43 @@ export default function AuthCallback() {
     const handleCallback = async () => {
       try {
         // Get the token from the URL
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
+        const hash = window.location.hash;
+        const query = new URLSearchParams(window.location.search);
+        const token = query.get('token');
+        const refreshToken = query.get('refresh_token');
+        const type = query.get('type');
 
         if (!token) {
           throw new Error('No token found in URL');
         }
 
-        // Exchange the token
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: token,
-          type: 'signup'
-        });
+        if (type === 'signup') {
+          // Handle signup confirmation
+          const { error } = await supabase.auth.verifyOtp({
+            token,
+            type: 'signup',
+          });
 
-        if (error) throw error;
+          if (error) throw error;
+        } else if (type === 'recovery') {
+          // Handle password reset
+          const { error } = await supabase.auth.verifyOtp({
+            token,
+            type: 'recovery',
+          });
+
+          if (error) throw error;
+        }
 
         // Redirect to home page after successful verification
         navigate('/', { replace: true });
       } catch (err: any) {
         console.error('Error during verification:', err);
         setError(err.message);
+        // On error, redirect to login page after a delay
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 3000);
       }
     };
 
@@ -43,6 +60,9 @@ export default function AuthCallback() {
           <div className="text-sm text-red-700">
             Error during verification: {error}
           </div>
+          <p className="mt-2 text-sm text-gray-600">
+            Redirecting to login page...
+          </p>
         </div>
       </div>
     );
