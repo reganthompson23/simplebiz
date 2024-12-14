@@ -18,7 +18,7 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       if (isSignUp) {
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
           options: {
@@ -29,22 +29,9 @@ export default function LoginForm() {
         });
 
         if (signUpError) throw signUpError;
-
-        if (authData.user) {
-          // Create profile after successful signup
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: authData.user.id,
-                business_name: data.business_name,
-                contact_email: data.email,
-              },
-            ]);
-
-          if (profileError) throw profileError;
-          navigate('/');
-        }
+        
+        // Show success message and ask user to verify email
+        setError('Please check your email to verify your account.');
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: data.email,
@@ -70,8 +57,10 @@ export default function LoginForm() {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+            <div className={`rounded-md ${error.includes('verify') ? 'bg-blue-50' : 'bg-red-50'} p-4`}>
+              <div className={`text-sm ${error.includes('verify') ? 'text-blue-700' : 'text-red-700'}`}>
+                {error}
+              </div>
             </div>
           )}
 
