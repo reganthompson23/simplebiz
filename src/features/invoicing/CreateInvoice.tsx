@@ -259,7 +259,7 @@ export default function CreateInvoice() {
                   <input
                     type="text"
                     {...register('fromDetails.businessName', { required: true })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                   />
                 </div>
                 <div>
@@ -267,11 +267,12 @@ export default function CreateInvoice() {
                   <textarea
                     {...register('fromDetails.address')}
                     rows={1}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 overflow-hidden resize-none transition-all duration-200"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm min-h-[40px] bg-gray-50 overflow-hidden resize-none transition-all duration-200 px-3 py-2"
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = `${target.scrollHeight}px`;
+                      target.style.height = '40px';
+                      const newHeight = Math.max(40, target.scrollHeight);
+                      target.style.height = `${newHeight}px`;
                     }}
                   />
                 </div>
@@ -280,7 +281,7 @@ export default function CreateInvoice() {
                   <input
                     type="text"
                     {...register('fromDetails.abn')}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                   />
                 </div>
               </div>
@@ -293,7 +294,7 @@ export default function CreateInvoice() {
                   <input
                     type="text"
                     {...register('toDetails.businessName', { required: true })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                   />
                 </div>
                 <div>
@@ -301,11 +302,12 @@ export default function CreateInvoice() {
                   <textarea
                     {...register('toDetails.address')}
                     rows={1}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 overflow-hidden resize-none transition-all duration-200"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm min-h-[40px] bg-gray-50 overflow-hidden resize-none transition-all duration-200 px-3 py-2"
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = `${target.scrollHeight}px`;
+                      target.style.height = '40px';
+                      const newHeight = Math.max(40, target.scrollHeight);
+                      target.style.height = `${newHeight}px`;
                     }}
                   />
                 </div>
@@ -314,7 +316,7 @@ export default function CreateInvoice() {
                   <input
                     type="text"
                     {...register('toDetails.abn')}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                   />
                 </div>
               </div>
@@ -327,7 +329,7 @@ export default function CreateInvoice() {
                 <input
                   type="date"
                   {...register('issueDate', { required: true })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                 />
               </div>
               <div>
@@ -335,7 +337,7 @@ export default function CreateInvoice() {
                 <input
                   type="date"
                   {...register('dueDate')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                 />
               </div>
               <div>
@@ -344,7 +346,7 @@ export default function CreateInvoice() {
                   type="text"
                   {...register('paymentTerms')}
                   placeholder="e.g. Net 30"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                 />
               </div>
             </div>
@@ -360,7 +362,7 @@ export default function CreateInvoice() {
                       <input
                         type="text"
                         {...register(`items.${index}.description` as const, { required: true })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                       />
                     </div>
                     <div className="col-span-2">
@@ -373,7 +375,7 @@ export default function CreateInvoice() {
                           min: 0.01,
                           valueAsNumber: true
                         })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                       />
                     </div>
                     <div className="col-span-2">
@@ -386,7 +388,7 @@ export default function CreateInvoice() {
                           min: 0,
                           valueAsNumber: true
                         })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                       />
                     </div>
                     <div className="col-span-1">
@@ -480,11 +482,12 @@ export default function CreateInvoice() {
                   {...register('notes')}
                   rows={1}
                   placeholder="Any relevant information not already covered"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 overflow-hidden resize-none transition-all duration-200"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm min-h-[40px] bg-gray-50 overflow-hidden resize-none transition-all duration-200 px-3 py-2"
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = `${target.scrollHeight}px`;
+                    target.style.height = '40px';
+                    const newHeight = Math.max(40, target.scrollHeight);
+                    target.style.height = `${newHeight}px`;
                   }}
                 />
               </div>
@@ -494,11 +497,12 @@ export default function CreateInvoice() {
                   {...register('terms')}
                   rows={1}
                   placeholder="Payment methods, late fees, delivery schedule, etc."
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 overflow-hidden resize-none transition-all duration-200"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm min-h-[40px] bg-gray-50 overflow-hidden resize-none transition-all duration-200 px-3 py-2"
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = `${target.scrollHeight}px`;
+                    target.style.height = '40px';
+                    const newHeight = Math.max(40, target.scrollHeight);
+                    target.style.height = `${newHeight}px`;
                   }}
                 />
               </div>
