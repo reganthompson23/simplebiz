@@ -147,7 +147,7 @@ export default function InvoicePDF({ invoice }: InvoicePDFProps) {
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>INVOICE</Text>
-            <Text style={styles.invoiceNumber}>#{invoice.invoiceNumber}</Text>
+            <Text style={styles.invoiceNumber}>#{invoice.invoice_number}</Text>
           </View>
           {/* Logo would go here */}
         </View>
@@ -156,37 +156,69 @@ export default function InvoicePDF({ invoice }: InvoicePDFProps) {
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>FROM</Text>
-            <Text style={styles.value}>{invoice.fromDetails.businessName}</Text>
-            {invoice.fromDetails.address && (
-              <Text style={styles.value}>{invoice.fromDetails.address}</Text>
+            <Text style={styles.value}>
+              {typeof invoice.from_details === 'string' 
+                ? JSON.parse(invoice.from_details).businessName 
+                : invoice.from_details.businessName}
+            </Text>
+            {(typeof invoice.from_details === 'string' 
+              ? JSON.parse(invoice.from_details).address 
+              : invoice.from_details.address) && (
+              <Text style={styles.value}>
+                {typeof invoice.from_details === 'string' 
+                  ? JSON.parse(invoice.from_details).address 
+                  : invoice.from_details.address}
+              </Text>
             )}
-            {invoice.fromDetails.abn && (
-              <Text style={styles.value}>ABN: {invoice.fromDetails.abn}</Text>
+            {(typeof invoice.from_details === 'string' 
+              ? JSON.parse(invoice.from_details).abn 
+              : invoice.from_details.abn) && (
+              <Text style={styles.value}>ABN: {
+                typeof invoice.from_details === 'string' 
+                  ? JSON.parse(invoice.from_details).abn 
+                  : invoice.from_details.abn
+              }</Text>
             )}
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>TO</Text>
-            <Text style={styles.value}>{invoice.toDetails.businessName}</Text>
-            {invoice.toDetails.address && (
-              <Text style={styles.value}>{invoice.toDetails.address}</Text>
+            <Text style={styles.value}>
+              {typeof invoice.to_details === 'string' 
+                ? JSON.parse(invoice.to_details).businessName 
+                : invoice.to_details.businessName}
+            </Text>
+            {(typeof invoice.to_details === 'string' 
+              ? JSON.parse(invoice.to_details).address 
+              : invoice.to_details.address) && (
+              <Text style={styles.value}>
+                {typeof invoice.to_details === 'string' 
+                  ? JSON.parse(invoice.to_details).address 
+                  : invoice.to_details.address}
+              </Text>
             )}
-            {invoice.toDetails.abn && (
-              <Text style={styles.value}>ABN: {invoice.toDetails.abn}</Text>
+            {(typeof invoice.to_details === 'string' 
+              ? JSON.parse(invoice.to_details).abn 
+              : invoice.to_details.abn) && (
+              <Text style={styles.value}>ABN: {
+                typeof invoice.to_details === 'string' 
+                  ? JSON.parse(invoice.to_details).abn 
+                  : invoice.to_details.abn
+              }</Text>
             )}
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>INVOICE DATE</Text>
-            <Text style={styles.value}>{new Date(invoice.issueDate).toLocaleDateString()}</Text>
-            {invoice.dueDate && (
+            <Text style={styles.value}>{new Date(invoice.issue_date).toLocaleDateString()}</Text>
+            {invoice.due_date && (
               <>
                 <Text style={styles.label}>DUE DATE</Text>
-                <Text style={styles.value}>{new Date(invoice.dueDate).toLocaleDateString()}</Text>
+                <Text style={styles.value}>{new Date(invoice.due_date).toLocaleDateString()}</Text>
               </>
             )}
-            {invoice.paymentTerms && (
+            {invoice.payment_terms && (
               <>
                 <Text style={styles.label}>PAYMENT TERMS</Text>
-                <Text style={styles.value}>{invoice.paymentTerms}</Text>
+                <Text style={styles.value}>{invoice.payment_terms}</Text>
               </>
             )}
           </View>
@@ -204,7 +236,7 @@ export default function InvoicePDF({ invoice }: InvoicePDFProps) {
             <View key={index} style={styles.tableRow}>
               <Text style={[styles.tableCell, styles.description]}>{item.description}</Text>
               <Text style={[styles.tableCell, styles.quantity]}>{item.quantity}</Text>
-              <Text style={[styles.tableCell, styles.price]}>{formatCurrency(item.unitPrice)}</Text>
+              <Text style={[styles.tableCell, styles.price]}>{formatCurrency(item.unit_price)}</Text>
               <Text style={[styles.tableCell, styles.amount]}>{formatCurrency(item.amount)}</Text>
             </View>
           ))}
@@ -217,26 +249,26 @@ export default function InvoicePDF({ invoice }: InvoicePDFProps) {
             <Text style={styles.totalValue}>{formatCurrency(invoice.subtotal)}</Text>
           </View>
           
-          {invoice.discountType && invoice.discountValue && (
+          {invoice.discount_type && invoice.discount_value && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>
                 Discount
-                {invoice.discountType === 'percentage' ? ` (${invoice.discountValue}%)` : ''}
+                {invoice.discount_type === 'percentage' ? ` (${invoice.discount_value}%)` : ''}
               </Text>
               <Text style={styles.totalValue}>
                 -{formatCurrency(
-                  invoice.discountType === 'percentage'
-                    ? (invoice.subtotal * (invoice.discountValue / 100))
-                    : invoice.discountValue
+                  invoice.discount_type === 'percentage'
+                    ? (invoice.subtotal * (invoice.discount_value / 100))
+                    : invoice.discount_value
                 )}
               </Text>
             </View>
           )}
 
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>GST ({invoice.taxRate}%)</Text>
+            <Text style={styles.totalLabel}>GST ({invoice.tax_rate}%)</Text>
             <Text style={styles.totalValue}>
-              {formatCurrency((invoice.subtotal - (invoice.discountValue || 0)) * (invoice.taxRate / 100))}
+              {formatCurrency((invoice.subtotal - (invoice.discount_value || 0)) * (invoice.tax_rate / 100))}
             </Text>
           </View>
 
