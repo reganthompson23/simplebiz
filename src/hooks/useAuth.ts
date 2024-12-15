@@ -26,12 +26,24 @@ export function useAuth() {
       }
     });
 
-    // Listen for changes on auth state (sign in, sign out, etc.)
+    // Set up automatic token refresh
     const {
-      data: { subscription },
+      data: { subscription: refreshSubscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        // Get the user profile data
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed');
+        if (session?.user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (data) {
+            setUser(data as User);
+          }
+        }
+      } else if (event === 'SIGNED_IN' && session?.user) {
         const { data } = await supabase
           .from('profiles')
           .select('*')
@@ -48,7 +60,15 @@ export function useAuth() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Set up periodic token refresh
+    const refreshInterval = setInterval(() => {
+      supabase.auth.refreshSession();
+    }, 10 * 60 * 1000); // Refresh every 10 minutes
+
+    return () => {
+      refreshSubscription.unsubscribe();
+      clearInterval(refreshInterval);
+    };
   }, [navigate, setUser]);
 
   return { user };
