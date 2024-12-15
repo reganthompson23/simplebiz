@@ -21,47 +21,47 @@ export interface Lead {
 
 export interface Invoice {
   id: string;
-  profileId: string;
-  invoiceNumber: string;
-  fromDetails: {
+  profile_id: string;
+  invoice_number: string;
+  from_details: {
     businessName: string;
     address?: string;
     phone?: string;
     email?: string;
     abn?: string;
-  };
-  toDetails: {
+  } | string;
+  to_details: {
     businessName: string;
     address?: string;
     phone?: string;
     email?: string;
     abn?: string;
-  };
-  paymentTerms?: string;
-  issueDate: string;
-  dueDate?: string;
+  } | string;
+  payment_terms?: string;
+  issue_date: string;
+  due_date?: string;
   subtotal: number;
-  discountType?: 'percentage' | 'fixed';
-  discountValue?: number;
-  taxRate: number;
+  discount_type?: 'percentage' | 'fixed';
+  discount_value?: number;
+  tax_rate: number;
   total: number;
   notes?: string;
   terms?: string;
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   items: InvoiceItem[];
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface InvoiceItem {
   id: string;
-  invoiceId: string;
+  invoice_id: string;
   description: string;
   quantity: number;
-  unitPrice: number;
+  unit_price: number;
   amount: number;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Expense {

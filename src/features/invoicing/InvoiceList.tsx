@@ -122,12 +122,22 @@ export default function InvoiceList() {
               {invoices?.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{invoice.invoiceNumber}
+                    #{invoice.invoice_number}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{invoice.toDetails.businessName}</div>
-                    {invoice.toDetails.email && (
-                      <div className="text-sm text-gray-500">{invoice.toDetails.email}</div>
+                    <div className="text-sm text-gray-900">
+                      {typeof invoice.to_details === 'string' 
+                        ? JSON.parse(invoice.to_details).businessName 
+                        : invoice.to_details.businessName}
+                    </div>
+                    {(typeof invoice.to_details === 'string' 
+                      ? JSON.parse(invoice.to_details).email 
+                      : invoice.to_details.email) && (
+                      <div className="text-sm text-gray-500">
+                        {typeof invoice.to_details === 'string' 
+                          ? JSON.parse(invoice.to_details).email 
+                          : invoice.to_details.email}
+                      </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -139,7 +149,7 @@ export default function InvoiceList() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}
+                    {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button
@@ -150,7 +160,7 @@ export default function InvoiceList() {
                     </button>
                     <PDFDownloadLink
                       document={<InvoicePDF invoice={invoice} />}
-                      fileName={`invoice-${invoice.invoiceNumber}.pdf`}
+                      fileName={`invoice-${invoice.invoice_number}.pdf`}
                       className="text-gray-600 hover:text-gray-900"
                     >
                       {({ loading }) => (
