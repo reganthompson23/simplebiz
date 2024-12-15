@@ -21,7 +21,7 @@ export default function Layout() {
   };
 
   const navigation = [
-    { name: 'Website', href: '/sitebuilder', icon: LayoutGrid },
+    { name: 'Website', href: '/website', icon: LayoutGrid },
     { name: 'Inquiries', href: '/inquiries', icon: Users },
     { name: 'Invoices', href: '/invoices', icon: FileText },
     { name: 'Expenses', href: '/expenses', icon: DollarSign },
