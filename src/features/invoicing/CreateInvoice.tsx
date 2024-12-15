@@ -87,6 +87,10 @@ export default function CreateInvoice() {
         ? String(Number(lastInvoice.invoice_number) + 1).padStart(4, '0')
         : '0001';
 
+      // Format dates for PostgreSQL
+      const formattedIssueDate = new Date(data.issueDate).toISOString().split('T')[0];
+      const formattedDueDate = data.dueDate ? new Date(data.dueDate).toISOString().split('T')[0] : null;
+
       // Create the invoice
       const { data: invoice, error: invoiceError } = await supabase
         .from('invoices')
@@ -96,8 +100,8 @@ export default function CreateInvoice() {
           from_details: data.fromDetails,
           to_details: data.toDetails,
           payment_terms: data.paymentTerms,
-          issue_date: data.issueDate,
-          due_date: data.dueDate,
+          issue_date: formattedIssueDate,
+          due_date: formattedDueDate,
           subtotal,
           discount_type: discountType,
           discount_value: discountValue,
