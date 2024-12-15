@@ -437,45 +437,100 @@ export default function WebsiteBuilder() {
               </TabsContent>
 
               <TabsContent value="design">
-                <div className="space-y-6 p-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Primary Color
-                    </label>
-                    <Input
-                      type="color"
-                      {...register('theme.primaryColor')}
-                      value={watch('theme.primaryColor') || '#2563eb'}
-                      onChange={(e) => {
-                        console.log('Primary color changed:', e.target.value);
-                        setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
-                      }}
-                    />
+                <div className="space-y-8 p-6">
+                  <div className="grid gap-6">
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Primary Color
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Input
+                            type="color"
+                            {...register('theme.primaryColor')}
+                            value={watch('theme.primaryColor') || '#2563eb'}
+                            onChange={(e) => {
+                              console.log('Primary color changed:', e.target.value);
+                              setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
+                            }}
+                            className="h-10 w-20 p-1 cursor-pointer"
+                          />
+                        </div>
+                        <Input
+                          type="text"
+                          value={watch('theme.primaryColor') || '#2563eb'}
+                          onChange={(e) => {
+                            setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
+                          }}
+                          className="w-32 uppercase"
+                          maxLength={7}
+                        />
+                        <div 
+                          className="w-10 h-10 rounded border"
+                          style={{ backgroundColor: watch('theme.primaryColor') || '#2563eb' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Secondary Color
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Input
+                            type="color"
+                            {...register('theme.secondaryColor')}
+                            value={watch('theme.secondaryColor') || '#1e40af'}
+                            onChange={(e) => {
+                              console.log('Secondary color changed:', e.target.value);
+                              setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
+                            }}
+                            className="h-10 w-20 p-1 cursor-pointer"
+                          />
+                        </div>
+                        <Input
+                          type="text"
+                          value={watch('theme.secondaryColor') || '#1e40af'}
+                          onChange={(e) => {
+                            setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
+                          }}
+                          className="w-32 uppercase"
+                          maxLength={7}
+                        />
+                        <div 
+                          className="w-10 h-10 rounded border"
+                          style={{ backgroundColor: watch('theme.secondaryColor') || '#1e40af' }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Secondary Color
-                    </label>
-                    <Input
-                      type="color"
-                      {...register('theme.secondaryColor')}
-                      value={watch('theme.secondaryColor') || '#1e40af'}
-                      onChange={(e) => {
-                        console.log('Secondary color changed:', e.target.value);
-                        setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setValue('theme.primaryColor', '#2563eb', { shouldDirty: true });
+                        setValue('theme.secondaryColor', '#1e40af', { shouldDirty: true });
                       }}
-                    />
+                      className="w-full"
+                    >
+                      Reset to Default Colors
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setValue('theme.primaryColor', '#2563eb');
-                      setValue('theme.secondaryColor', '#1e40af');
-                    }}
-                  >
-                    Reset Colors
-                  </Button>
+
+                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="text-sm font-medium mb-2">Color Preview</h3>
+                    <div className="space-y-2">
+                      <div className="h-10 rounded" style={{ backgroundColor: watch('theme.primaryColor') || '#2563eb' }}>
+                        <div className="p-2 text-white text-sm">Primary Color</div>
+                      </div>
+                      <div className="h-10 rounded" style={{ backgroundColor: watch('theme.secondaryColor') || '#1e40af' }}>
+                        <div className="p-2 text-white text-sm">Secondary Color</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
