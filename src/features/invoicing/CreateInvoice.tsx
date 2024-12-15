@@ -266,8 +266,13 @@ export default function CreateInvoice() {
                   <label className="block text-sm font-medium text-gray-700">Address</label>
                   <textarea
                     {...register('fromDetails.address')}
-                    rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm min-h-[100px] bg-gray-50"
+                    rows={1}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 overflow-hidden resize-none transition-all duration-200"
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = 'auto';
+                      target.style.height = `${target.scrollHeight}px`;
+                    }}
                   />
                 </div>
                 <div>
@@ -295,8 +300,13 @@ export default function CreateInvoice() {
                   <label className="block text-sm font-medium text-gray-700">Address</label>
                   <textarea
                     {...register('toDetails.address')}
-                    rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm min-h-[100px] bg-gray-50"
+                    rows={1}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 overflow-hidden resize-none transition-all duration-200"
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = 'auto';
+                      target.style.height = `${target.scrollHeight}px`;
+                    }}
                   />
                 </div>
                 <div>
@@ -468,18 +478,28 @@ export default function CreateInvoice() {
                 <label className="block text-sm font-medium text-gray-700">Notes</label>
                 <textarea
                   {...register('notes')}
-                  rows={4}
+                  rows={1}
                   placeholder="Any relevant information not already covered"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm min-h-[100px] bg-gray-50"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 overflow-hidden resize-none transition-all duration-200"
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = `${target.scrollHeight}px`;
+                  }}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Terms and Conditions</label>
                 <textarea
                   {...register('terms')}
-                  rows={4}
+                  rows={1}
                   placeholder="Payment methods, late fees, delivery schedule, etc."
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm min-h-[100px] bg-gray-50"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 overflow-hidden resize-none transition-all duration-200"
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = `${target.scrollHeight}px`;
+                  }}
                 />
               </div>
             </div>
