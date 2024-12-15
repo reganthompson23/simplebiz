@@ -30,6 +30,7 @@ function App() {
             <Route path="website" element={<WebsiteBuilder />} />
             <Route path="invoices" element={<InvoiceList />} />
             <Route path="invoices/new" element={<CreateInvoice />} />
+            <Route path="invoices/:id/edit" element={<CreateInvoice />} />
             <Route path="inquiries" element={<LeadsList />} />
             <Route path="expenses" element={<ExpenseList />} />
             <Route path="schedule" element={<ScheduleView />} />

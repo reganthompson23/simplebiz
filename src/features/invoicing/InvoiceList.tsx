@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Invoice } from '../../types';
-import { FileText, Plus, Download, Send, Eye } from 'lucide-react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { FileText, Plus, Download, Send, Eye, Pencil } from 'lucide-react';
+import { PDFDownloadLink, BlobProvider } from '@react-pdf/renderer';
 import InvoicePDF from './InvoicePDF';
 import { formatCurrency } from '../../lib/utils';
 
@@ -158,12 +158,18 @@ export default function InvoiceList() {
                     >
                       <Eye className="h-4 w-4 inline" />
                     </button>
+                    <button
+                      onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      <Pencil className="h-4 w-4 inline" />
+                    </button>
                     <PDFDownloadLink
                       document={<InvoicePDF invoice={invoice} />}
                       fileName={`invoice-${invoice.invoice_number}.pdf`}
                       className="text-gray-600 hover:text-gray-900"
                     >
-                      {({ loading }) => (
+                      {({ loading }: { loading: boolean }) => (
                         loading ? (
                           <span className="text-gray-400">...</span>
                         ) : (
