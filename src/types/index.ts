@@ -4,6 +4,7 @@ export interface User {
   businessName: string;
   businessAddress?: string;
   phone?: string;
+  abn?: string;
   createdAt: string;
 }
 
@@ -20,13 +21,47 @@ export interface Lead {
 
 export interface Invoice {
   id: string;
-  userId: string;
-  clientName: string;
-  amount: number;
-  description: string;
-  dueDate: string;
-  status: 'paid' | 'unpaid';
+  profileId: string;
+  invoiceNumber: string;
+  fromDetails: {
+    businessName: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    abn?: string;
+  };
+  toDetails: {
+    businessName: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    abn?: string;
+  };
+  paymentTerms?: string;
+  issueDate: string;
+  dueDate?: string;
+  subtotal: number;
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  taxRate: number;
+  total: number;
+  notes?: string;
+  terms?: string;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  items: InvoiceItem[];
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoiceId: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Expense {

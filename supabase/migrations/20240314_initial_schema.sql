@@ -5,6 +5,7 @@ create table profiles (
   contact_email text not null,
   contact_phone text,
   address text,
+  abn text,
   logo_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -40,11 +41,32 @@ create table invoices (
   id uuid default uuid_generate_v4() primary key,
   profile_id uuid references profiles(id) on delete cascade not null,
   invoice_number text not null,
-  client_name text not null,
-  amount decimal(10,2) not null,
-  status text not null default 'unpaid',
+  from_details jsonb not null default '{}',
+  to_details jsonb not null default '{}',
+  payment_terms text,
+  issue_date date not null default current_date,
   due_date date,
-  description text,
+  subtotal decimal(10,2) not null default 0,
+  discount_type text check (discount_type in ('percentage', 'fixed')),
+  discount_value decimal(10,2),
+  tax_rate decimal(5,2) default 10.00,
+  total decimal(10,2) not null default 0,
+  notes text,
+  terms text,
+  status text not null default 'draft' check (status in ('draft', 'sent', 'paid', 'overdue', 'cancelled')),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(profile_id, invoice_number)
+);
+
+-- Create invoice items table
+create table invoice_items (
+  id uuid default uuid_generate_v4() primary key,
+  invoice_id uuid references invoices(id) on delete cascade not null,
+  description text not null,
+  quantity decimal(10,2) not null default 1,
+  unit_price decimal(10,2) not null,
+  amount decimal(10,2) not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -101,6 +123,19 @@ create policy "Users can view own invoices" on invoices for select using (profil
 create policy "Users can insert own invoices" on invoices for insert with check (profile_id = auth.uid());
 create policy "Users can update own invoices" on invoices for update using (profile_id = auth.uid());
 create policy "Users can delete own invoices" on invoices for delete using (profile_id = auth.uid());
+
+create policy "Users can view own invoice items" on invoice_items for select using (
+  invoice_id in (select id from invoices where profile_id = auth.uid())
+);
+create policy "Users can insert own invoice items" on invoice_items for insert with check (
+  invoice_id in (select id from invoices where profile_id = auth.uid())
+);
+create policy "Users can update own invoice items" on invoice_items for update using (
+  invoice_id in (select id from invoices where profile_id = auth.uid())
+);
+create policy "Users can delete own invoice items" on invoice_items for delete using (
+  invoice_id in (select id from invoices where profile_id = auth.uid())
+);
 
 create policy "Users can view own expenses" on expenses for select using (profile_id = auth.uid());
 create policy "Users can insert own expenses" on expenses for insert with check (profile_id = auth.uid());

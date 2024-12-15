@@ -1,57 +1,41 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuth } from './hooks/useAuth';
-import Layout from './components/Layout';
 import LoginForm from './components/auth/LoginForm';
-import AuthCallback from './components/auth/AuthCallback';
+import Dashboard from './components/Dashboard';
 import WebsiteBuilder from './features/website/WebsiteBuilder';
-import LeadsList from './features/crm/LeadsList';
 import InvoiceList from './features/invoicing/InvoiceList';
+import CreateInvoice from './features/invoicing/CreateInvoice';
+import LeadsList from './features/crm/LeadsList';
 import ExpenseList from './features/expenses/ExpenseList';
-import ScheduleView from './features/schedule/ScheduleView';
+import ScheduleList from './features/schedule/ScheduleList';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 1000, // Data stays fresh for 30 seconds
-      cacheTime: 5 * 60 * 1000, // Cache data for 5 minutes
-      retry: 1, // Only retry once
-      retryDelay: 1000, // Wait 1 second before retrying
-    },
-  },
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1
+    }
+  }
 });
-
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  return user ? <>{children}</> : <Navigate to="/login" />;
-}
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <Router>
         <Routes>
           <Route path="/login" element={<LoginForm />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Layout />
-              </PrivateRoute>
-            }
-          >
-            <Route index element={<Navigate to="/sitebuilder" />} />
-            <Route path="sitebuilder" element={<WebsiteBuilder />} />
-            <Route path="inquiries" element={<LeadsList />} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}>
+            <Route path="website" element={<WebsiteBuilder />} />
             <Route path="invoices" element={<InvoiceList />} />
+            <Route path="invoices/new" element={<CreateInvoice />} />
+            <Route path="inquiries" element={<LeadsList />} />
             <Route path="expenses" element={<ExpenseList />} />
-            <Route path="schedule" element={<ScheduleView />} />
+            <Route path="schedule" element={<ScheduleList />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </Router>
     </QueryClientProvider>
   );
 }

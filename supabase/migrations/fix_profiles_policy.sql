@@ -2,24 +2,24 @@
 drop trigger if exists on_auth_user_created on auth.users;
 drop function if exists public.handle_new_user();
 
--- Create the updated function
+-- Recreate function with better error handling
 create or replace function public.handle_new_user() 
 returns trigger as $$
 begin
-  insert into public.profiles (
-    id,
-    business_name,
-    contact_email
-  ) values (
+  insert into public.profiles (id, business_name, contact_email)
+  values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'business_name', ''),
+    coalesce(new.raw_user_meta_data->>'business_name', new.email),
     new.email
   );
+  return new;
+exception when others then
+  raise log 'Error in handle_new_user: %', SQLERRM;
   return new;
 end;
 $$ language plpgsql security definer;
 
--- Create the trigger again
+-- Recreate trigger
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
