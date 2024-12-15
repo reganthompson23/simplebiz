@@ -6,7 +6,7 @@ import Layout from './components/Layout';
 import LoginForm from './components/auth/LoginForm';
 import AuthCallback from './components/auth/AuthCallback';
 import WebsiteBuilder from './features/website/WebsiteBuilder';
-import LeadsList from './features/crm/LeadsList';
+import LeadsList from './features/inquiries/LeadsList';
 import InvoiceList from './features/invoicing/InvoiceList';
 import ExpenseList from './features/expenses/ExpenseList';
 import ScheduleView from './features/schedule/ScheduleView';
@@ -45,7 +45,7 @@ function App() {
           >
             <Route index element={<Navigate to="/sitebuilder" />} />
             <Route path="sitebuilder" element={<WebsiteBuilder />} />
-            <Route path="crm" element={<LeadsList />} />
+            <Route path="inquiries" element={<LeadsList />} />
             <Route path="invoices" element={<InvoiceList />} />
             <Route path="expenses" element={<ExpenseList />} />
             <Route path="schedule" element={<ScheduleView />} />

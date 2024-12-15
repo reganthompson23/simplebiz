@@ -22,7 +22,7 @@ export default function Layout() {
 
   const navigation = [
     { name: 'Website', href: '/sitebuilder', icon: LayoutGrid },
-    { name: 'CRM', href: '/crm', icon: Users },
+    { name: 'Inquiries', href: '/inquiries', icon: Users },
     { name: 'Invoices', href: '/invoices', icon: FileText },
     { name: 'Expenses', href: '/expenses', icon: DollarSign },
     { name: 'Schedule', href: '/schedule', icon: Calendar },
