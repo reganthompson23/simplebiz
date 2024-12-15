@@ -14,8 +14,10 @@ import ScheduleView from './features/schedule/ScheduleView';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0, // Consider all data stale immediately
-      cacheTime: 0, // Don't cache any data
+      staleTime: 30 * 1000, // Data stays fresh for 30 seconds
+      cacheTime: 5 * 60 * 1000, // Cache data for 5 minutes
+      retry: 1, // Only retry once
+      retryDelay: 1000, // Wait 1 second before retrying
     },
   },
 });
