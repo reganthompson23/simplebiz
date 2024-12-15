@@ -291,8 +291,8 @@ export default function WebsiteBuilder() {
   const websiteUrl = `${baseUrl}/sites/${previewSubdomain}`;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="container mx-auto py-8 px-6 max-w-7xl">
+      <div className="flex justify-between items-center mb-8 px-2">
         <h1 className="text-3xl font-bold">Website Builder</h1>
         <div className="space-x-4">
           <Button
@@ -314,294 +314,296 @@ export default function WebsiteBuilder() {
       {previewMode ? (
         <WebsitePreview content={currentContent} />
       ) : (
-        <form 
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-8"
-          onClick={(e) => {
-            console.log('Form clicked');
-            console.log('Form state:', formState);
-            console.log('Is form dirty:', formState.isDirty);
-          }}
-        >
-          <Card>
-            <Tabs defaultValue="content">
-              <TabsList>
-                <TabsTrigger value="content">Content</TabsTrigger>
-                <TabsTrigger value="design">Design</TabsTrigger>
-                <TabsTrigger value="leadForm">Lead Form</TabsTrigger>
-              </TabsList>
+        <div className="px-2">
+          <form 
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-8"
+            onClick={(e) => {
+              console.log('Form clicked');
+              console.log('Form state:', formState);
+              console.log('Is form dirty:', formState.isDirty);
+            }}
+          >
+            <Card>
+              <Tabs defaultValue="content">
+                <TabsList>
+                  <TabsTrigger value="content">Content</TabsTrigger>
+                  <TabsTrigger value="design">Design</TabsTrigger>
+                  <TabsTrigger value="leadForm">Lead Form</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="content">
-                <div className="space-y-6 p-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Business Name
-                    </label>
-                    <Input 
-                      {...register('businessName')}
-                      value={watch('businessName') || ''}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        console.log('Input change event value:', value);
-                        setValue('businessName', value, { shouldDirty: true });
-                      }}
-                    />
-                  </div>
+                <TabsContent value="content">
+                  <div className="space-y-6 p-6">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Business Name
+                      </label>
+                      <Input 
+                        {...register('businessName')}
+                        value={watch('businessName') || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          console.log('Input change event value:', value);
+                          setValue('businessName', value, { shouldDirty: true });
+                        }}
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      About Us
-                    </label>
-                    <Textarea 
-                      {...register('aboutUs')}
-                      value={watch('aboutUs') || ''}
-                      onChange={(e) => setValue('aboutUs', e.target.value, { shouldDirty: true })}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        About Us
+                      </label>
+                      <Textarea 
+                        {...register('aboutUs')}
+                        value={watch('aboutUs') || ''}
+                        onChange={(e) => setValue('aboutUs', e.target.value, { shouldDirty: true })}
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Services
-                    </label>
-                    {(watch('services') || ['']).map((service, index) => (
-                      <div key={index} className="flex gap-2 mb-2">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Services
+                      </label>
+                      {(watch('services') || ['']).map((service, index) => (
+                        <div key={index} className="flex gap-2 mb-2">
+                          <Input 
+                            {...register(`services.${index}`)}
+                            value={service || ''}
+                            onChange={(e) => {
+                              const services = [...(watch('services') || [''])];
+                              services[index] = e.target.value;
+                              setValue('services', services, { shouldDirty: true });
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => removeService(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addService}
+                      >
+                        Add Service
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Phone
+                        </label>
                         <Input 
-                          {...register(`services.${index}`)}
-                          value={service || ''}
+                          {...register('contactInfo.phone')}
+                          value={watch('contactInfo.phone') || ''}
                           onChange={(e) => {
-                            const services = [...(watch('services') || [''])];
-                            services[index] = e.target.value;
-                            setValue('services', services, { shouldDirty: true });
+                            console.log('Phone changed:', e.target.value);
+                            setValue('contactInfo.phone', e.target.value, { shouldDirty: true });
                           }}
                         />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => removeService(index)}
-                        >
-                          Remove
-                        </Button>
                       </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addService}
-                    >
-                      Add Service
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Phone
-                      </label>
-                      <Input 
-                        {...register('contactInfo.phone')}
-                        value={watch('contactInfo.phone') || ''}
-                        onChange={(e) => {
-                          console.log('Phone changed:', e.target.value);
-                          setValue('contactInfo.phone', e.target.value, { shouldDirty: true });
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Email
-                      </label>
-                      <Input 
-                        {...register('contactInfo.email')}
-                        value={watch('contactInfo.email') || ''}
-                        onChange={(e) => {
-                          console.log('Email changed:', e.target.value);
-                          setValue('contactInfo.email', e.target.value, { shouldDirty: true });
-                        }}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium mb-2">
-                        Address
-                      </label>
-                      <Input 
-                        {...register('contactInfo.address')}
-                        value={watch('contactInfo.address') || ''}
-                        onChange={(e) => {
-                          console.log('Address changed:', e.target.value);
-                          setValue('contactInfo.address', e.target.value, { shouldDirty: true });
-                        }}
-                      />
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Email
+                        </label>
+                        <Input 
+                          {...register('contactInfo.email')}
+                          value={watch('contactInfo.email') || ''}
+                          onChange={(e) => {
+                            console.log('Email changed:', e.target.value);
+                            setValue('contactInfo.email', e.target.value, { shouldDirty: true });
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium mb-2">
+                          Address
+                        </label>
+                        <Input 
+                          {...register('contactInfo.address')}
+                          value={watch('contactInfo.address') || ''}
+                          onChange={(e) => {
+                            console.log('Address changed:', e.target.value);
+                            setValue('contactInfo.address', e.target.value, { shouldDirty: true });
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
+                </TabsContent>
 
-              <TabsContent value="design">
-                <div className="space-y-8 p-6">
-                  <div className="grid gap-6">
-                    <div className="space-y-4">
-                      <label className="block text-sm font-medium mb-2">
-                        Primary Color
-                      </label>
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
+                <TabsContent value="design">
+                  <div className="space-y-8 p-6">
+                    <div className="grid gap-6">
+                      <div className="space-y-4">
+                        <label className="block text-sm font-medium mb-2">
+                          Primary Color
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <Input
+                              type="color"
+                              {...register('theme.primaryColor')}
+                              value={watch('theme.primaryColor') || '#2563eb'}
+                              onChange={(e) => {
+                                console.log('Primary color changed:', e.target.value);
+                                setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
+                              }}
+                              className="h-10 w-20 p-1 cursor-pointer"
+                            />
+                          </div>
                           <Input
-                            type="color"
-                            {...register('theme.primaryColor')}
+                            type="text"
                             value={watch('theme.primaryColor') || '#2563eb'}
                             onChange={(e) => {
-                              console.log('Primary color changed:', e.target.value);
                               setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
                             }}
-                            className="h-10 w-20 p-1 cursor-pointer"
+                            className="w-32 uppercase"
+                            maxLength={7}
+                          />
+                          <div 
+                            className="w-10 h-10 rounded border"
+                            style={{ backgroundColor: watch('theme.primaryColor') || '#2563eb' }}
                           />
                         </div>
-                        <Input
-                          type="text"
-                          value={watch('theme.primaryColor') || '#2563eb'}
-                          onChange={(e) => {
-                            setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
-                          }}
-                          className="w-32 uppercase"
-                          maxLength={7}
-                        />
-                        <div 
-                          className="w-10 h-10 rounded border"
-                          style={{ backgroundColor: watch('theme.primaryColor') || '#2563eb' }}
-                        />
                       </div>
-                    </div>
 
-                    <div className="space-y-4">
-                      <label className="block text-sm font-medium mb-2">
-                        Secondary Color
-                      </label>
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
+                      <div className="space-y-4">
+                        <label className="block text-sm font-medium mb-2">
+                          Secondary Color
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <Input
+                              type="color"
+                              {...register('theme.secondaryColor')}
+                              value={watch('theme.secondaryColor') || '#1e40af'}
+                              onChange={(e) => {
+                                console.log('Secondary color changed:', e.target.value);
+                                setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
+                              }}
+                              className="h-10 w-20 p-1 cursor-pointer"
+                            />
+                          </div>
                           <Input
-                            type="color"
-                            {...register('theme.secondaryColor')}
+                            type="text"
                             value={watch('theme.secondaryColor') || '#1e40af'}
                             onChange={(e) => {
-                              console.log('Secondary color changed:', e.target.value);
                               setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
                             }}
-                            className="h-10 w-20 p-1 cursor-pointer"
+                            className="w-32 uppercase"
+                            maxLength={7}
+                          />
+                          <div 
+                            className="w-10 h-10 rounded border"
+                            style={{ backgroundColor: watch('theme.secondaryColor') || '#1e40af' }}
                           />
                         </div>
-                        <Input
-                          type="text"
-                          value={watch('theme.secondaryColor') || '#1e40af'}
-                          onChange={(e) => {
-                            setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
-                          }}
-                          className="w-32 uppercase"
-                          maxLength={7}
-                        />
-                        <div 
-                          className="w-10 h-10 rounded border"
-                          style={{ backgroundColor: watch('theme.secondaryColor') || '#1e40af' }}
-                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setValue('theme.primaryColor', '#2563eb', { shouldDirty: true });
+                          setValue('theme.secondaryColor', '#1e40af', { shouldDirty: true });
+                        }}
+                        className="w-full"
+                      >
+                        Reset to Default Colors
+                      </Button>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                      <h3 className="text-sm font-medium mb-2">Color Preview</h3>
+                      <div className="space-y-2">
+                        <div className="h-10 rounded" style={{ backgroundColor: watch('theme.primaryColor') || '#2563eb' }}>
+                          <div className="p-2 text-white text-sm">Primary Color</div>
+                        </div>
+                        <div className="h-10 rounded" style={{ backgroundColor: watch('theme.secondaryColor') || '#1e40af' }}>
+                          <div className="p-2 text-white text-sm">Secondary Color</div>
+                        </div>
                       </div>
                     </div>
                   </div>
+                </TabsContent>
 
-                  <div className="pt-4 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setValue('theme.primaryColor', '#2563eb', { shouldDirty: true });
-                        setValue('theme.secondaryColor', '#1e40af', { shouldDirty: true });
-                      }}
-                      className="w-full"
-                    >
-                      Reset to Default Colors
-                    </Button>
-                  </div>
-
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-sm font-medium mb-2">Color Preview</h3>
-                    <div className="space-y-2">
-                      <div className="h-10 rounded" style={{ backgroundColor: watch('theme.primaryColor') || '#2563eb' }}>
-                        <div className="p-2 text-white text-sm">Primary Color</div>
-                      </div>
-                      <div className="h-10 rounded" style={{ backgroundColor: watch('theme.secondaryColor') || '#1e40af' }}>
-                        <div className="p-2 text-white text-sm">Secondary Color</div>
-                      </div>
+                <TabsContent value="leadForm">
+                  <div className="space-y-6 p-6">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        {...register('leadForm.enabled')}
+                      />
+                      <label className="text-sm font-medium">
+                        Enable Lead Form
+                      </label>
                     </div>
+
+                    {watch('leadForm.enabled') && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            {...register('leadForm.fields.name')}
+                          />
+                          <label className="text-sm">Name Field</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            {...register('leadForm.fields.email')}
+                          />
+                          <label className="text-sm">Email Field</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            {...register('leadForm.fields.phone')}
+                          />
+                          <label className="text-sm">Phone Field</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            {...register('leadForm.fields.message')}
+                          />
+                          <label className="text-sm">Message Field</label>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </TabsContent>
+                </TabsContent>
+              </Tabs>
+            </Card>
 
-              <TabsContent value="leadForm">
-                <div className="space-y-6 p-6">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      {...register('leadForm.enabled')}
-                    />
-                    <label className="text-sm font-medium">
-                      Enable Lead Form
-                    </label>
-                  </div>
-
-                  {watch('leadForm.enabled') && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          {...register('leadForm.fields.name')}
-                        />
-                        <label className="text-sm">Name Field</label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          {...register('leadForm.fields.email')}
-                        />
-                        <label className="text-sm">Email Field</label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          {...register('leadForm.fields.phone')}
-                        />
-                        <label className="text-sm">Phone Field</label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          {...register('leadForm.fields.message')}
-                        />
-                        <label className="text-sm">Message Field</label>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </Card>
-
-          <div className="flex justify-end gap-4">
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isSaving}
-              onClick={handleSubmit(onSubmit)}
-              className="hover:bg-blue-700 active:bg-blue-800 transition-colors"
-            >
-              {isSaving ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin">⌛</span> 
-                  Saving...
-                </span>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-4">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isSaving}
+                onClick={handleSubmit(onSubmit)}
+                className="hover:bg-blue-700 active:bg-blue-800 transition-colors"
+              >
+                {isSaving ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⌛</span> 
+                    Saving...
+                  </span>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
       )}
 
       <div className="mt-8 p-4 bg-gray-50 rounded-lg">
