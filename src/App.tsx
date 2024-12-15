@@ -6,7 +6,7 @@ import Layout from './components/Layout';
 import LoginForm from './components/auth/LoginForm';
 import AuthCallback from './components/auth/AuthCallback';
 import WebsiteBuilder from './features/website/WebsiteBuilder';
-import LeadsList from './features/inquiries/LeadsList';
+import LeadsList from './features/crm/LeadsList';
 import InvoiceList from './features/invoicing/InvoiceList';
 import ExpenseList from './features/expenses/ExpenseList';
 import ScheduleView from './features/schedule/ScheduleView';
