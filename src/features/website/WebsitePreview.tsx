@@ -28,6 +28,8 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
       primaryColor: '#2563eb',
       secondaryColor: '#1e40af',
       fontFamily: 'Inter',
+      topImage: '',
+      overlayOpacity: 0,
     },
   } = content || {};
 
@@ -42,11 +44,26 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
     >
       {/* Hero Section */}
       <header 
-        className="py-20 px-4 text-center text-white"
-        style={{ backgroundColor: theme.primaryColor }}
+        className="relative py-20 px-4 text-center text-white overflow-hidden"
+        style={{ minHeight: '400px' }}
       >
-        <h1 className="text-4xl font-bold mb-4">{businessName}</h1>
-        <p className="text-xl max-w-2xl mx-auto">{aboutUs}</p>
+        {theme.topImage && (
+          <div 
+            className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${theme.topImage})` }}
+          />
+        )}
+        <div 
+          className="absolute inset-0 w-full h-full"
+          style={{ 
+            backgroundColor: theme.primaryColor,
+            opacity: theme.overlayOpacity / 100
+          }} 
+        />
+        <div className="relative z-10">
+          <h1 className="text-4xl font-bold mb-4">{businessName}</h1>
+          <p className="text-xl max-w-2xl mx-auto">{aboutUs}</p>
+        </div>
       </header>
 
       {/* Services Section */}

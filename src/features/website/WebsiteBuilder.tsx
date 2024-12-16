@@ -229,6 +229,8 @@ export default function WebsiteBuilder() {
           primaryColor: data.theme?.primaryColor || '#2563eb',
           secondaryColor: data.theme?.secondaryColor || '#1e40af',
           fontFamily: data.theme?.fontFamily || 'Inter',
+          topImage: data.theme?.topImage || '',
+          overlayOpacity: data.theme?.overlayOpacity ?? 80,
         },
         leadForm: {
           enabled: data.leadForm?.enabled ?? true,
@@ -440,6 +442,57 @@ export default function WebsiteBuilder() {
                 <TabsContent value="design">
                   <div className="space-y-8 p-6">
                     <div className="grid gap-6">
+                      <div className="space-y-4">
+                        <label className="block text-sm font-medium mb-2">
+                          Top Image
+                        </label>
+                        <div className="space-y-2">
+                          <Input
+                            type="url"
+                            placeholder="Enter image URL (e.g., https://images.unsplash.com/...)"
+                            {...register('theme.topImage')}
+                            value={watch('theme.topImage') || ''}
+                            onChange={(e) => {
+                              setValue('theme.topImage', e.target.value, { shouldDirty: true });
+                            }}
+                          />
+                          <p className="text-sm text-gray-500">
+                            Tip: Use a high-quality image from{' '}
+                            <a 
+                              href="https://unsplash.com" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:underline"
+                            >
+                              Unsplash
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="block text-sm font-medium mb-2">
+                          Overlay Opacity
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="1"
+                            {...register('theme.overlayOpacity')}
+                            value={watch('theme.overlayOpacity') || 80}
+                            onChange={(e) => {
+                              setValue('theme.overlayOpacity', parseInt(e.target.value), { shouldDirty: true });
+                            }}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-600 w-12">
+                            {watch('theme.overlayOpacity')}%
+                          </span>
+                        </div>
+                      </div>
+
                       <div className="space-y-4">
                         <label className="block text-sm font-medium mb-2">
                           Primary Color

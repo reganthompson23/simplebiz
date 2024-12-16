@@ -20,6 +20,8 @@ export interface WebsiteContent {
     primaryColor: string;
     secondaryColor: string;
     fontFamily: string;
+    topImage: string;
+    overlayOpacity: number;
   };
 }
 
@@ -55,5 +57,7 @@ export const defaultContent: WebsiteContent = {
     primaryColor: '#2563eb',
     secondaryColor: '#1e40af',
     fontFamily: 'Inter',
+    topImage: '',
+    overlayOpacity: 80,
   },
 }; 
