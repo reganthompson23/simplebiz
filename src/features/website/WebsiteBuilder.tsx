@@ -45,30 +45,7 @@ export default function WebsiteBuilder() {
   });
 
   const { register, handleSubmit, watch, setValue, reset, formState } = useForm<WebsiteContent>({
-    defaultValues: {
-      businessName: '',
-      aboutUs: '',
-      services: [''],
-      contactInfo: {
-        phone: '',
-        email: '',
-        address: '',
-      },
-      leadForm: {
-        enabled: true,
-        fields: {
-          name: true,
-          email: true,
-          phone: true,
-          message: true,
-        },
-      },
-      theme: {
-        primaryColor: '#2563eb',
-        secondaryColor: '#1e40af',
-        fontFamily: 'Inter',
-      },
-    }
+    defaultValues: defaultContent
   });
 
   // Log form state changes
@@ -90,7 +67,6 @@ export default function WebsiteBuilder() {
   // Update current content when form values change
   React.useEffect(() => {
     const subscription = watch((value) => {
-      console.log('Form values changed:', value);
       if (value) {
         setCurrentContent(value as WebsiteContent);
       }
@@ -121,9 +97,6 @@ export default function WebsiteBuilder() {
           
           console.log('Update result:', { data, error });
           if (error) throw error;
-          
-          // Update the form with the saved data
-          reset(data.content);
           return data;
         } else {
           console.log('Creating new website for user:', user.id);
@@ -147,12 +120,10 @@ export default function WebsiteBuilder() {
         throw error;
       }
     },
-    onMutate: () => {
-      console.log('Mutation starting...');
-    },
     onSuccess: (data) => {
       console.log('Mutation succeeded:', data);
       queryClient.invalidateQueries({ queryKey: ['website'] });
+      setIsSaving(false);
       toast({
         title: 'Success',
         description: 'Your website has been saved.',
@@ -161,6 +132,7 @@ export default function WebsiteBuilder() {
     },
     onError: (error: any) => {
       console.error('Mutation failed:', error);
+      setIsSaving(false);
       toast({
         title: 'Error',
         description: error.message || 'Failed to save website',
@@ -214,6 +186,11 @@ export default function WebsiteBuilder() {
       return;
     }
     
+    if (isSaving) {
+      console.log('Already saving, skipping...');
+      return;
+    }
+    
     setIsSaving(true);
     try {
       // Clean up services array to remove null values
@@ -244,21 +221,15 @@ export default function WebsiteBuilder() {
       };
       console.log('Cleaned data for submission:', cleanedData);
       
-      const result = await mutation.mutateAsync(cleanedData);
-      console.log('Save completed:', result);
-      
-      // Update the form with the saved data
-      reset(result.content);
-      setCurrentContent(result.content);
+      await mutation.mutateAsync(cleanedData);
     } catch (error) {
       console.error('Error in onSubmit:', error);
+      setIsSaving(false);
       toast({
         title: 'Error',
         description: 'Failed to save changes. Please try again.',
         type: 'error',
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
