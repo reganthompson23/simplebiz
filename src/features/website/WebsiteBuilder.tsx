@@ -24,7 +24,6 @@ export default function WebsiteBuilder() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [previewMode, setPreviewMode] = React.useState(false);
-  const [isSaving, setIsSaving] = React.useState(false);
   const [currentContent, setCurrentContent] = React.useState<WebsiteContent>(defaultContent);
   
   const { data: website, isLoading, error: websiteError } = useQuery({
@@ -123,7 +122,6 @@ export default function WebsiteBuilder() {
     onSuccess: (data) => {
       console.log('Mutation succeeded:', data);
       queryClient.invalidateQueries({ queryKey: ['website'] });
-      setIsSaving(false);
       toast({
         title: 'Success',
         description: 'Your website has been saved.',
@@ -132,7 +130,6 @@ export default function WebsiteBuilder() {
     },
     onError: (error: any) => {
       console.error('Mutation failed:', error);
-      setIsSaving(false);
       toast({
         title: 'Error',
         description: error.message || 'Failed to save website',
@@ -186,12 +183,11 @@ export default function WebsiteBuilder() {
       return;
     }
     
-    if (isSaving) {
+    if (mutation.isPending) {
       console.log('Already saving, skipping...');
       return;
     }
     
-    setIsSaving(true);
     try {
       // Clean up services array to remove null values
       const cleanedData = {
@@ -224,7 +220,6 @@ export default function WebsiteBuilder() {
       await mutation.mutateAsync(cleanedData);
     } catch (error) {
       console.error('Error in onSubmit:', error);
-      setIsSaving(false);
       toast({
         title: 'Error',
         description: 'Failed to save changes. Please try again.',
@@ -612,11 +607,11 @@ export default function WebsiteBuilder() {
               <Button
                 type="submit"
                 variant="primary"
-                disabled={isSaving}
+                disabled={mutation.isPending}
                 onClick={handleSubmit(onSubmit)}
                 className="hover:bg-blue-700 active:bg-blue-800 transition-colors"
               >
-                {isSaving ? (
+                {mutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <span className="animate-spin">⌛</span> 
                     Saving...
