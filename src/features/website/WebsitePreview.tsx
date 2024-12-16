@@ -61,8 +61,8 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
           }} 
         />
         <div className="relative z-10">
-          <h1 className="text-4xl font-bold mb-4">{businessName}</h1>
-          <p className="text-xl max-w-2xl mx-auto">{aboutUs}</p>
+          <h1 className="text-4xl font-bold mb-4 text-shadow-lg">{businessName}</h1>
+          <p className="text-xl max-w-2xl mx-auto text-shadow-lg">{aboutUs}</p>
         </div>
       </header>
 
