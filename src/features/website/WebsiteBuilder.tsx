@@ -17,7 +17,7 @@ function generateSubdomain(businessName: string | undefined): string {
   return businessName
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '')
-    .slice(0, 63); // Max length for subdomains
+    .slice(0, 63);
 }
 
 export default function WebsiteBuilder() {
@@ -25,7 +25,6 @@ export default function WebsiteBuilder() {
   const queryClient = useQueryClient();
   const [previewMode, setPreviewMode] = React.useState(false);
   const [currentContent, setCurrentContent] = React.useState<WebsiteContent>(defaultContent);
-  const [isSaving, setIsSaving] = React.useState(false);
   
   const { data: website, isLoading, error: websiteError } = useQuery({
     queryKey: ['website'],
@@ -106,9 +105,6 @@ export default function WebsiteBuilder() {
         throw error;
       }
     },
-    onMutate: () => {
-      setIsSaving(true);
-    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['website'] });
       toast({
@@ -123,32 +119,8 @@ export default function WebsiteBuilder() {
         description: error.message || 'Failed to save website',
         type: 'error',
       });
-    },
-    onSettled: () => {
-      setIsSaving(false);
     }
   });
-
-  const handleFieldChange = async (field: string, value: any) => {
-    setValue(field, value, { 
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true 
-    });
-
-    // Trigger save after field change
-    const formData = watch();
-    const updatedData = {
-      ...formData,
-      [field]: value
-    };
-
-    try {
-      await mutation.mutateAsync(updatedData as WebsiteContent);
-    } catch (error) {
-      console.error('Error saving field change:', error);
-    }
-  };
 
   const publishMutation = useMutation({
     mutationFn: async () => {
@@ -235,14 +207,21 @@ export default function WebsiteBuilder() {
     }
   };
 
+  const handleFieldChange = (field: string, value: any) => {
+    setValue(field, value, { 
+      shouldDirty: true,
+      shouldTouch: true 
+    });
+  };
+
   const addService = () => {
     const services = watch('services') || [];
-    setValue('services', [...services, '']);
+    setValue('services', [...services, ''], { shouldDirty: true });
   };
 
   const removeService = (index: number) => {
     const services = watch('services') || [];
-    setValue('services', services.filter((_, i) => i !== index));
+    setValue('services', services.filter((_, i) => i !== index), { shouldDirty: true });
   };
 
   if (isLoading) {
@@ -290,15 +269,7 @@ export default function WebsiteBuilder() {
         <WebsitePreview content={currentContent} />
       ) : (
         <div className="px-2">
-          <form 
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-8"
-            onClick={(e) => {
-              console.log('Form clicked');
-              console.log('Form state:', formState);
-              console.log('Is form dirty:', formState.isDirty);
-            }}
-          >
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <Card>
               <Tabs defaultValue="content">
                 <TabsList>
@@ -315,12 +286,7 @@ export default function WebsiteBuilder() {
                       </label>
                       <Input 
                         {...register('businessName')}
-                        value={watch('businessName') || ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          console.log('Input change event value:', value);
-                          setValue('businessName', value, { shouldDirty: true });
-                        }}
+                        onChange={(e) => handleFieldChange('businessName', e.target.value)}
                       />
                     </div>
 
@@ -330,8 +296,7 @@ export default function WebsiteBuilder() {
                       </label>
                       <Textarea 
                         {...register('aboutUs')}
-                        value={watch('aboutUs') || ''}
-                        onChange={(e) => setValue('aboutUs', e.target.value, { shouldDirty: true })}
+                        onChange={(e) => handleFieldChange('aboutUs', e.target.value)}
                       />
                     </div>
 
@@ -342,12 +307,11 @@ export default function WebsiteBuilder() {
                       {(watch('services') || ['']).map((service, index) => (
                         <div key={index} className="flex gap-2 mb-2">
                           <Input 
-                            {...register(`services.${index}`)}
-                            value={service || ''}
+                            value={service}
                             onChange={(e) => {
                               const services = [...(watch('services') || [''])];
                               services[index] = e.target.value;
-                              setValue('services', services, { shouldDirty: true });
+                              handleFieldChange('services', services);
                             }}
                           />
                           <Button
@@ -375,11 +339,7 @@ export default function WebsiteBuilder() {
                         </label>
                         <Input 
                           {...register('contactInfo.phone')}
-                          value={watch('contactInfo.phone') || ''}
-                          onChange={(e) => {
-                            console.log('Phone changed:', e.target.value);
-                            setValue('contactInfo.phone', e.target.value, { shouldDirty: true });
-                          }}
+                          onChange={(e) => handleFieldChange('contactInfo.phone', e.target.value)}
                         />
                       </div>
                       <div>
@@ -388,11 +348,7 @@ export default function WebsiteBuilder() {
                         </label>
                         <Input 
                           {...register('contactInfo.email')}
-                          value={watch('contactInfo.email') || ''}
-                          onChange={(e) => {
-                            console.log('Email changed:', e.target.value);
-                            setValue('contactInfo.email', e.target.value, { shouldDirty: true });
-                          }}
+                          onChange={(e) => handleFieldChange('contactInfo.email', e.target.value)}
                         />
                       </div>
                       <div className="col-span-2">
@@ -401,11 +357,7 @@ export default function WebsiteBuilder() {
                         </label>
                         <Input 
                           {...register('contactInfo.address')}
-                          value={watch('contactInfo.address') || ''}
-                          onChange={(e) => {
-                            console.log('Address changed:', e.target.value);
-                            setValue('contactInfo.address', e.target.value, { shouldDirty: true });
-                          }}
+                          onChange={(e) => handleFieldChange('contactInfo.address', e.target.value)}
                         />
                       </div>
                     </div>
@@ -468,7 +420,6 @@ export default function WebsiteBuilder() {
                           <div className="relative">
                             <Input
                               type="color"
-                              {...register('theme.primaryColor')}
                               value={watch('theme.primaryColor') || '#2563eb'}
                               onChange={(e) => handleFieldChange('theme.primaryColor', e.target.value)}
                               className="h-10 w-20 p-1 cursor-pointer"
@@ -496,21 +447,15 @@ export default function WebsiteBuilder() {
                           <div className="relative">
                             <Input
                               type="color"
-                              {...register('theme.secondaryColor')}
                               value={watch('theme.secondaryColor') || '#1e40af'}
-                              onChange={(e) => {
-                                console.log('Secondary color changed:', e.target.value);
-                                setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
-                              }}
+                              onChange={(e) => handleFieldChange('theme.secondaryColor', e.target.value)}
                               className="h-10 w-20 p-1 cursor-pointer"
                             />
                           </div>
                           <Input
                             type="text"
                             value={watch('theme.secondaryColor') || '#1e40af'}
-                            onChange={(e) => {
-                              setValue('theme.secondaryColor', e.target.value, { shouldDirty: true });
-                            }}
+                            onChange={(e) => handleFieldChange('theme.secondaryColor', e.target.value)}
                             className="w-32 uppercase"
                             maxLength={7}
                           />
@@ -527,8 +472,8 @@ export default function WebsiteBuilder() {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          setValue('theme.primaryColor', '#2563eb', { shouldDirty: true });
-                          setValue('theme.secondaryColor', '#1e40af', { shouldDirty: true });
+                          handleFieldChange('theme.primaryColor', '#2563eb');
+                          handleFieldChange('theme.secondaryColor', '#1e40af');
                         }}
                         className="w-full"
                       >
@@ -555,7 +500,7 @@ export default function WebsiteBuilder() {
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        {...register('leadForm.enabled')}
+                        checked={watch('leadForm.enabled')}
                         onChange={(e) => handleFieldChange('leadForm.enabled', e.target.checked)}
                       />
                       <label className="text-sm font-medium">
@@ -568,7 +513,7 @@ export default function WebsiteBuilder() {
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            {...register('leadForm.fields.name')}
+                            checked={watch('leadForm.fields.name')}
                             onChange={(e) => handleFieldChange('leadForm.fields.name', e.target.checked)}
                           />
                           <label className="text-sm">Name Field</label>
@@ -576,7 +521,7 @@ export default function WebsiteBuilder() {
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            {...register('leadForm.fields.email')}
+                            checked={watch('leadForm.fields.email')}
                             onChange={(e) => handleFieldChange('leadForm.fields.email', e.target.checked)}
                           />
                           <label className="text-sm">Email Field</label>
@@ -584,7 +529,7 @@ export default function WebsiteBuilder() {
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            {...register('leadForm.fields.phone')}
+                            checked={watch('leadForm.fields.phone')}
                             onChange={(e) => handleFieldChange('leadForm.fields.phone', e.target.checked)}
                           />
                           <label className="text-sm">Phone Field</label>
@@ -592,7 +537,7 @@ export default function WebsiteBuilder() {
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            {...register('leadForm.fields.message')}
+                            checked={watch('leadForm.fields.message')}
                             onChange={(e) => handleFieldChange('leadForm.fields.message', e.target.checked)}
                           />
                           <label className="text-sm">Message Field</label>
@@ -609,7 +554,6 @@ export default function WebsiteBuilder() {
                 type="submit"
                 variant="primary"
                 disabled={mutation.isPending}
-                onClick={handleSubmit(onSubmit)}
                 className="hover:bg-blue-700 active:bg-blue-800 transition-colors"
               >
                 {mutation.isPending ? (
