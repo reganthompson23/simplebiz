@@ -242,6 +242,14 @@ export default function WebsiteBuilder() {
     setValue('services', services.filter((_, i) => i !== index));
   };
 
+  const handleFieldChange = (field: string, value: any) => {
+    setValue(field, value, { 
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true 
+    });
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -422,9 +430,7 @@ export default function WebsiteBuilder() {
                             placeholder="Enter image URL (e.g., https://images.unsplash.com/...)"
                             {...register('theme.topImage')}
                             value={watch('theme.topImage') || ''}
-                            onChange={(e) => {
-                              setValue('theme.topImage', e.target.value, { shouldDirty: true });
-                            }}
+                            onChange={(e) => handleFieldChange('theme.topImage', e.target.value)}
                           />
                           <p className="text-sm text-gray-500">
                             Tip: Use a high-quality image from{' '}
@@ -452,9 +458,7 @@ export default function WebsiteBuilder() {
                             step="1"
                             {...register('theme.overlayOpacity')}
                             value={watch('theme.overlayOpacity') || 80}
-                            onChange={(e) => {
-                              setValue('theme.overlayOpacity', parseInt(e.target.value), { shouldDirty: true });
-                            }}
+                            onChange={(e) => handleFieldChange('theme.overlayOpacity', parseInt(e.target.value))}
                             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                           />
                           <span className="text-sm text-gray-600 w-12">
@@ -473,19 +477,14 @@ export default function WebsiteBuilder() {
                               type="color"
                               {...register('theme.primaryColor')}
                               value={watch('theme.primaryColor') || '#2563eb'}
-                              onChange={(e) => {
-                                console.log('Primary color changed:', e.target.value);
-                                setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
-                              }}
+                              onChange={(e) => handleFieldChange('theme.primaryColor', e.target.value)}
                               className="h-10 w-20 p-1 cursor-pointer"
                             />
                           </div>
                           <Input
                             type="text"
                             value={watch('theme.primaryColor') || '#2563eb'}
-                            onChange={(e) => {
-                              setValue('theme.primaryColor', e.target.value, { shouldDirty: true });
-                            }}
+                            onChange={(e) => handleFieldChange('theme.primaryColor', e.target.value)}
                             className="w-32 uppercase"
                             maxLength={7}
                           />
@@ -564,6 +563,7 @@ export default function WebsiteBuilder() {
                       <input
                         type="checkbox"
                         {...register('leadForm.enabled')}
+                        onChange={(e) => handleFieldChange('leadForm.enabled', e.target.checked)}
                       />
                       <label className="text-sm font-medium">
                         Enable Lead Form
@@ -576,6 +576,7 @@ export default function WebsiteBuilder() {
                           <input
                             type="checkbox"
                             {...register('leadForm.fields.name')}
+                            onChange={(e) => handleFieldChange('leadForm.fields.name', e.target.checked)}
                           />
                           <label className="text-sm">Name Field</label>
                         </div>
@@ -583,6 +584,7 @@ export default function WebsiteBuilder() {
                           <input
                             type="checkbox"
                             {...register('leadForm.fields.email')}
+                            onChange={(e) => handleFieldChange('leadForm.fields.email', e.target.checked)}
                           />
                           <label className="text-sm">Email Field</label>
                         </div>
@@ -590,6 +592,7 @@ export default function WebsiteBuilder() {
                           <input
                             type="checkbox"
                             {...register('leadForm.fields.phone')}
+                            onChange={(e) => handleFieldChange('leadForm.fields.phone', e.target.checked)}
                           />
                           <label className="text-sm">Phone Field</label>
                         </div>
@@ -597,6 +600,7 @@ export default function WebsiteBuilder() {
                           <input
                             type="checkbox"
                             {...register('leadForm.fields.message')}
+                            onChange={(e) => handleFieldChange('leadForm.fields.message', e.target.checked)}
                           />
                           <label className="text-sm">Message Field</label>
                         </div>
