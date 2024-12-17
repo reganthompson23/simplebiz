@@ -25,6 +25,7 @@ export default function WebsiteBuilder() {
   const queryClient = useQueryClient();
   const [previewMode, setPreviewMode] = React.useState(false);
   const [currentContent, setCurrentContent] = React.useState<WebsiteContent>(defaultContent);
+  const [isSaving, setIsSaving] = React.useState(false);
   
   const { data: website, isLoading, error: websiteError } = useQuery({
     queryKey: ['website'],
@@ -43,21 +44,13 @@ export default function WebsiteBuilder() {
     enabled: !!user?.id,
   });
 
-  const { register, handleSubmit, watch, setValue, reset, formState } = useForm<WebsiteContent>({
+  const { register, handleSubmit, watch, setValue, reset } = useForm<WebsiteContent>({
     defaultValues: defaultContent
   });
-
-  // Log form state changes
-  React.useEffect(() => {
-    console.log('Form state:', formState);
-    console.log('Current form values:', watch());
-    console.log('Business name value:', watch('businessName'));
-  }, [formState, watch]);
 
   // Update form and current content when website data loads
   React.useEffect(() => {
     if (website?.content) {
-      console.log('Loading website content into form:', website.content);
       reset(website.content);
       setCurrentContent(website.content);
     }
@@ -78,11 +71,9 @@ export default function WebsiteBuilder() {
       if (!user?.id) throw new Error('User not authenticated');
       
       const subdomain = generateSubdomain(content.businessName);
-      console.log('Attempting to save content:', content);
       
       try {
         if (website) {
-          console.log('Updating existing website:', website.id);
           const { data, error } = await supabase
             .from('websites')
             .update({ 
@@ -97,7 +88,6 @@ export default function WebsiteBuilder() {
           if (error) throw error;
           return data;
         } else {
-          console.log('Creating new website for user:', user.id);
           const { data, error } = await supabase
             .from('websites')
             .insert([{
@@ -113,19 +103,13 @@ export default function WebsiteBuilder() {
           return data;
         }
       } catch (error) {
-        console.error('Database operation failed:', error);
         throw error;
       }
     },
     onMutate: () => {
-      // Optimistically update UI
-      toast({
-        title: 'Saving...',
-        description: 'Your changes are being saved.',
-        type: 'default',
-      });
+      setIsSaving(true);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['website'] });
       toast({
         title: 'Success',
@@ -134,7 +118,6 @@ export default function WebsiteBuilder() {
       });
     },
     onError: (error: any) => {
-      console.error('Mutation failed:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to save website',
@@ -142,10 +125,30 @@ export default function WebsiteBuilder() {
       });
     },
     onSettled: () => {
-      // Always run after completion (success or error)
-      queryClient.invalidateQueries({ queryKey: ['website'] });
+      setIsSaving(false);
     }
   });
+
+  const handleFieldChange = async (field: string, value: any) => {
+    setValue(field, value, { 
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true 
+    });
+
+    // Trigger save after field change
+    const formData = watch();
+    const updatedData = {
+      ...formData,
+      [field]: value
+    };
+
+    try {
+      await mutation.mutateAsync(updatedData as WebsiteContent);
+    } catch (error) {
+      console.error('Error saving field change:', error);
+    }
+  };
 
   const publishMutation = useMutation({
     mutationFn: async () => {
@@ -240,14 +243,6 @@ export default function WebsiteBuilder() {
   const removeService = (index: number) => {
     const services = watch('services') || [];
     setValue('services', services.filter((_, i) => i !== index));
-  };
-
-  const handleFieldChange = (field: string, value: any) => {
-    setValue(field, value, { 
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true 
-    });
   };
 
   if (isLoading) {
@@ -428,7 +423,6 @@ export default function WebsiteBuilder() {
                           <Input
                             type="url"
                             placeholder="Enter image URL (e.g., https://images.unsplash.com/...)"
-                            {...register('theme.topImage')}
                             value={watch('theme.topImage') || ''}
                             onChange={(e) => handleFieldChange('theme.topImage', e.target.value)}
                           />
@@ -456,7 +450,6 @@ export default function WebsiteBuilder() {
                             min="0"
                             max="100"
                             step="1"
-                            {...register('theme.overlayOpacity')}
                             value={watch('theme.overlayOpacity') || 80}
                             onChange={(e) => handleFieldChange('theme.overlayOpacity', parseInt(e.target.value))}
                             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
