@@ -60,11 +60,18 @@ export default function WebsiteBuilder() {
   // Handle field changes (local state only)
   const handleFieldChange = (path: string[], value: any) => {
     setEditingContent(prev => {
-      const newContent = { ...prev };
+      let newContent = JSON.parse(JSON.stringify(prev)); // Deep clone
       let current = newContent;
+      
+      // Navigate to the parent of the target property
       for (let i = 0; i < path.length - 1; i++) {
+        if (!(path[i] in current)) {
+          current[path[i]] = {};
+        }
         current = current[path[i]];
       }
+      
+      // Set the value
       current[path[path.length - 1]] = value;
       return newContent;
     });
