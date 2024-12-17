@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -7,69 +7,87 @@ import type { User } from '../types';
 export function useAuth() {
   const navigate = useNavigate();
   const { user, setUser } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        // Get the user profile data
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data }) => {
-            if (data) {
-              setUser(data as User);
-            }
-          });
-      }
-    });
+    let mounted = true;
 
-    // Set up automatic token refresh
-    const {
-      data: { subscription: refreshSubscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('Token refreshed');
-        if (session?.user) {
-          const { data } = await supabase
+    async function getInitialSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user && mounted) {
+          const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-          if (data) {
-            setUser(data as User);
+          if (profile && mounted) {
+            setUser(profile as User);
           }
         }
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    }
 
-        if (data) {
-          setUser(data as User);
-          navigate('/');
+    getInitialSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event);
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profile && mounted) {
+              setUser(profile as User);
+              if (event === 'SIGNED_IN') {
+                navigate('/');
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+          }
         }
       } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        navigate('/login');
+        if (mounted) {
+          setUser(null);
+          navigate('/login');
+        }
       }
     });
 
-    // Set up periodic token refresh
-    const refreshInterval = setInterval(() => {
-      supabase.auth.refreshSession();
-    }, 10 * 60 * 1000); // Refresh every 10 minutes
+    // Refresh session every 9 minutes (Supabase tokens expire in 1 hour)
+    const refreshInterval = setInterval(async () => {
+      try {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          console.error('Error refreshing session:', error);
+        }
+      } catch (error) {
+        console.error('Error in refresh interval:', error);
+      }
+    }, 9 * 60 * 1000);
 
     return () => {
-      refreshSubscription.unsubscribe();
+      mounted = false;
+      subscription.unsubscribe();
       clearInterval(refreshInterval);
     };
   }, [navigate, setUser]);
 
-  return { user };
+  return { user, isLoading };
 }
