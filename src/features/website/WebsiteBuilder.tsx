@@ -100,8 +100,23 @@ export default function WebsiteBuilder() {
   };
 
   // Handle saving a field
-  const handleSaveField = (path: string[], value: any) => {
-    updateField(path, value);
+  const handleSaveField = async (path: string[], value: any) => {
+    try {
+      await updateField(path, value);
+      // Refetch the website data to ensure we have the latest state
+      await queryClient.invalidateQueries({ queryKey: ['website'] });
+      toast({
+        title: 'Success',
+        description: 'Field updated successfully',
+        type: 'success',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update field',
+        type: 'error',
+      });
+    }
   };
 
   // Handle service changes (local state)
@@ -215,11 +230,17 @@ export default function WebsiteBuilder() {
 
     // Update edit value when prop value changes
     React.useEffect(() => {
-      setEditValue(value);
-    }, [value]);
+      if (!isEditing) {
+        setEditValue(value);
+      }
+    }, [value, isEditing]);
 
-    const handleSave = () => {
-      onSave();
+    const handleSave = async () => {
+      // First update the parent state
+      onChange(editValue);
+      // Then save to database
+      await onSave();
+      // Finally exit edit mode
       setIsEditing(false);
     };
 
@@ -250,10 +271,7 @@ export default function WebsiteBuilder() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  onChange(editValue);
-                  handleSave();
-                }}
+                onClick={handleSave}
                 disabled={isUpdating}
                 className="px-3"
               >
