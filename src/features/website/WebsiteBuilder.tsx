@@ -60,19 +60,41 @@ export default function WebsiteBuilder() {
   // Handle field changes (local state only)
   const handleFieldChange = (path: string[], value: any) => {
     setEditingContent(prev => {
-      let newContent = JSON.parse(JSON.stringify(prev)); // Deep clone
-      let current = newContent;
+      const newContent = { ...prev };
       
-      // Navigate to the parent of the target property
-      for (let i = 0; i < path.length - 1; i++) {
-        if (!(path[i] in current)) {
-          current[path[i]] = {};
-        }
-        current = current[path[i]];
+      if (path.length === 1) {
+        // Top level field
+        return {
+          ...newContent,
+          [path[0]]: value
+        };
       }
       
-      // Set the value
-      current[path[path.length - 1]] = value;
+      if (path.length === 2) {
+        // Nested one level (e.g., theme.primaryColor)
+        return {
+          ...newContent,
+          [path[0]]: {
+            ...newContent[path[0]],
+            [path[1]]: value
+          }
+        };
+      }
+      
+      if (path.length === 3) {
+        // Nested two levels (e.g., leadForm.fields.name)
+        return {
+          ...newContent,
+          [path[0]]: {
+            ...newContent[path[0]],
+            [path[1]]: {
+              ...newContent[path[0]][path[1]],
+              [path[2]]: value
+            }
+          }
+        };
+      }
+      
       return newContent;
     });
   };
