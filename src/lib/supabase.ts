@@ -16,7 +16,9 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      storage: localStorage,
+      storageKey: 'simplebiz_auth_token'
     },
     realtime: {
       params: {
