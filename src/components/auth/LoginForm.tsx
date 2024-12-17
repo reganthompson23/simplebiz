@@ -14,6 +14,7 @@ export default function LoginForm() {
   const [isSignUp, setIsSignUp] = React.useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>();
   const [error, setError] = React.useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Check for email verification status on mount
   React.useEffect(() => {
@@ -24,11 +25,12 @@ export default function LoginForm() {
   }, []);
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log('Form submitted with:', data);
+    setError(null);
+    setIsProcessing(true);
+    
     try {
       if (isSignUp) {
-        console.log('Attempting signup...');
-        // Try to sign up directly without email confirmation
+        // Sign up flow
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
@@ -39,25 +41,47 @@ export default function LoginForm() {
           }
         });
 
-        if (signUpError) {
-          console.error('Signup error:', signUpError);
-          throw signUpError;
+        if (signUpError) throw signUpError;
+
+        // Create profile after successful signup
+        if (signUpData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: signUpData.user.id,
+                business_name: data.business_name || '',
+                email: data.email,
+              }
+            ]);
+
+          if (profileError) throw profileError;
         }
 
-        console.log('Signup successful:', signUpData);
-        navigate('/');
+        // Wait for session to be established
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session) {
+          navigate('/');
+        }
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        // Sign in flow
+        const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         });
 
         if (signInError) throw signInError;
-        navigate('/');
+
+        // Wait for session to be established
+        if (signInData.session) {
+          navigate('/');
+        }
       }
     } catch (err: any) {
       console.error('Auth error:', err);
       setError(err.message);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -72,8 +96,8 @@ export default function LoginForm() {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className={`rounded-md ${error.includes('verify') ? 'bg-blue-50' : 'bg-red-50'} p-4`}>
-              <div className={`text-sm ${error.includes('verify') ? 'text-blue-700' : 'text-red-700'}`}>
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="text-sm text-red-700">
                 {error}
               </div>
             </div>
@@ -139,17 +163,27 @@ export default function LoginForm() {
           <div>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isProcessing}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {isSubmitting ? 'Processing...' : (isSignUp ? 'Sign up' : 'Sign in')}
+              {isProcessing ? (
+                <span className="flex items-center">
+                  <span className="animate-spin mr-2">⌛</span>
+                  Processing...
+                </span>
+              ) : (
+                isSignUp ? 'Sign up' : 'Sign in'
+              )}
             </button>
           </div>
 
           <div className="text-center">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError(null);
+              }}
               className="text-sm text-blue-600 hover:text-blue-500"
             >
               {isSignUp 
