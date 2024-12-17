@@ -11,5 +11,22 @@ if (!config.supabase.url || !config.supabase.anonKey) {
 
 export const supabase = createClient(
   config.supabase.url,
-  config.supabase.anonKey
+  config.supabase.anonKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
+    },
+    global: {
+      headers: {
+        'x-client-info': 'simplebiz'
+      }
+    }
+  }
 );
