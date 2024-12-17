@@ -1,9 +1,9 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Website, WebsiteContent, defaultContent } from './types';
 import { useAuth } from '../../hooks/useAuth';
+import { useWebsiteContent } from '../../hooks/useWebsiteContent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/Tabs';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -24,8 +24,8 @@ export default function WebsiteBuilder() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [previewMode, setPreviewMode] = React.useState(false);
-  const [currentContent, setCurrentContent] = React.useState<WebsiteContent>(defaultContent);
   
+  // Load website data
   const { data: website, isLoading, error: websiteError } = useQuery({
     queryKey: ['website'],
     queryFn: async () => {
@@ -43,94 +43,46 @@ export default function WebsiteBuilder() {
     enabled: !!user?.id,
   });
 
-  const { register, handleSubmit, watch, setValue, reset } = useForm<WebsiteContent>({
-    defaultValues: defaultContent
-  });
+  // Get our atomic update functions
+  const { updateField, updateArray, isUpdating } = useWebsiteContent(website?.id);
 
-  // Update form and current content when website data loads
-  React.useEffect(() => {
-    if (website?.content) {
-      reset(website.content);
-      setCurrentContent(website.content);
-    }
-  }, [website, reset]);
+  // Handle field changes
+  const handleFieldChange = (path: string[], value: any) => {
+    updateField(path, value);
+  };
 
-  // Update current content when form values change
-  React.useEffect(() => {
-    const subscription = watch((value) => {
-      if (value) {
-        setCurrentContent(value as WebsiteContent);
-      }
+  // Handle service changes
+  const addService = () => {
+    updateArray.mutate({
+      path: ['services'],
+      operation: 'add',
+      value: ''
     });
-    return () => subscription.unsubscribe();
-  }, [watch]);
+  };
 
-  const mutation = useMutation({
-    mutationFn: async (content: WebsiteContent) => {
-      if (!user?.id) throw new Error('User not authenticated');
-      
-      const subdomain = generateSubdomain(content.businessName);
-      
-      try {
-        if (website) {
-          const { data, error } = await supabase
-            .from('websites')
-            .update({ 
-              content, 
-              subdomain,
-              updated_at: new Date().toISOString() 
-            })
-            .eq('id', website.id)
-            .select()
-            .single();
-          
-          if (error) throw error;
-          return data;
-        } else {
-          const { data, error } = await supabase
-            .from('websites')
-            .insert([{
-              profile_id: user.id,
-              subdomain,
-              content,
-              published: false,
-            }])
-            .select()
-            .single();
-          
-          if (error) throw error;
-          return data;
-        }
-      } catch (error) {
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['website'] });
-      toast({
-        title: 'Success',
-        description: 'Your website has been saved.',
-        type: 'success',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save website',
-        type: 'error',
-      });
-    }
-  });
+  const updateService = (index: number, value: string) => {
+    updateArray.mutate({
+      path: ['services'],
+      operation: 'update',
+      index,
+      value
+    });
+  };
 
+  const removeService = (index: number) => {
+    updateArray.mutate({
+      path: ['services'],
+      operation: 'remove',
+      index
+    });
+  };
+
+  // Publication mutation
   const publishMutation = useMutation({
     mutationFn: async () => {
       if (!website) throw new Error('No website to publish');
       if (!user?.id) throw new Error('User not authenticated');
       
-      // First save any pending changes
-      await mutation.mutateAsync(watch());
-      
-      // Then update published status
       const { error } = await supabase
         .from('websites')
         .update({ 
@@ -150,7 +102,7 @@ export default function WebsiteBuilder() {
         type: 'success',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message,
@@ -158,71 +110,6 @@ export default function WebsiteBuilder() {
       });
     },
   });
-
-  const onSubmit = async (data: WebsiteContent) => {
-    if (!user?.id) {
-      toast({
-        title: 'Error',
-        description: 'You must be logged in to save changes.',
-        type: 'error',
-      });
-      return;
-    }
-    
-    if (mutation.isPending) {
-      return;
-    }
-    
-    try {
-      // Clean up services array to remove null values
-      const cleanedData = {
-        ...data,
-        services: (data.services || []).filter(service => service !== null && service !== ''),
-        contactInfo: {
-          phone: data.contactInfo?.phone || '',
-          email: data.contactInfo?.email || '',
-          address: data.contactInfo?.address || '',
-        },
-        theme: {
-          primaryColor: data.theme?.primaryColor || '#2563eb',
-          secondaryColor: data.theme?.secondaryColor || '#1e40af',
-          fontFamily: data.theme?.fontFamily || 'Inter',
-          topImage: data.theme?.topImage || '',
-          overlayOpacity: data.theme?.overlayOpacity ?? 80,
-        },
-        leadForm: {
-          enabled: data.leadForm?.enabled ?? true,
-          fields: {
-            name: data.leadForm?.fields?.name ?? true,
-            email: data.leadForm?.fields?.email ?? true,
-            phone: data.leadForm?.fields?.phone ?? true,
-            message: data.leadForm?.fields?.message ?? true,
-          }
-        }
-      };
-      
-      await mutation.mutateAsync(cleanedData);
-    } catch (error) {
-      console.error('Error in onSubmit:', error);
-    }
-  };
-
-  const handleFieldChange = (field: string, value: any) => {
-    setValue(field, value, { 
-      shouldDirty: true,
-      shouldTouch: true 
-    });
-  };
-
-  const addService = () => {
-    const services = watch('services') || [];
-    setValue('services', [...services, ''], { shouldDirty: true });
-  };
-
-  const removeService = (index: number) => {
-    const services = watch('services') || [];
-    setValue('services', services.filter((_, i) => i !== index), { shouldDirty: true });
-  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -240,7 +127,8 @@ export default function WebsiteBuilder() {
     return <div>Please log in to access the website builder.</div>;
   }
 
-  const previewSubdomain = generateSubdomain(currentContent.businessName);
+  const content = website?.content || defaultContent;
+  const previewSubdomain = generateSubdomain(content.businessName);
   const baseUrl = 'https://simplebizsites.netlify.app';
   const websiteUrl = `${baseUrl}/sites/${previewSubdomain}`;
 
@@ -258,7 +146,7 @@ export default function WebsiteBuilder() {
           <Button
             variant="primary"
             onClick={() => publishMutation.mutate()}
-            disabled={publishMutation.isPending || !currentContent.businessName}
+            disabled={publishMutation.isPending || !content.businessName}
           >
             {publishMutation.isPending ? 'Publishing...' : (website?.published ? 'Published' : 'Publish Website')}
           </Button>
@@ -266,307 +154,283 @@ export default function WebsiteBuilder() {
       </div>
 
       {previewMode ? (
-        <WebsitePreview content={currentContent} />
+        <WebsitePreview content={content} />
       ) : (
         <div className="px-2">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            <Card>
-              <Tabs defaultValue="content">
-                <TabsList>
-                  <TabsTrigger value="content">Content</TabsTrigger>
-                  <TabsTrigger value="design">Design</TabsTrigger>
-                  <TabsTrigger value="leadForm">Lead Form</TabsTrigger>
-                </TabsList>
+          <Card>
+            <Tabs defaultValue="content">
+              <TabsList>
+                <TabsTrigger value="content">Content</TabsTrigger>
+                <TabsTrigger value="design">Design</TabsTrigger>
+                <TabsTrigger value="leadForm">Lead Form</TabsTrigger>
+              </TabsList>
 
-                <TabsContent value="content">
-                  <div className="space-y-6 p-6">
+              <TabsContent value="content">
+                <div className="space-y-6 p-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Business Name
+                    </label>
+                    <Input 
+                      value={content.businessName}
+                      onChange={(e) => handleFieldChange(['businessName'], e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      About Us
+                    </label>
+                    <Textarea 
+                      value={content.aboutUs}
+                      onChange={(e) => handleFieldChange(['aboutUs'], e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Services
+                    </label>
+                    {content.services.map((service, index) => (
+                      <div key={index} className="flex gap-2 mb-2">
+                        <Input 
+                          value={service}
+                          onChange={(e) => updateService(index, e.target.value)}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => removeService(index)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addService}
+                    >
+                      Add Service
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Business Name
+                        Phone
                       </label>
                       <Input 
-                        {...register('businessName')}
-                        onChange={(e) => handleFieldChange('businessName', e.target.value)}
+                        value={content.contactInfo.phone}
+                        onChange={(e) => handleFieldChange(['contactInfo', 'phone'], e.target.value)}
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        About Us
+                        Email
                       </label>
-                      <Textarea 
-                        {...register('aboutUs')}
-                        onChange={(e) => handleFieldChange('aboutUs', e.target.value)}
+                      <Input 
+                        value={content.contactInfo.email}
+                        onChange={(e) => handleFieldChange(['contactInfo', 'email'], e.target.value)}
                       />
                     </div>
-
-                    <div>
+                    <div className="col-span-2">
                       <label className="block text-sm font-medium mb-2">
-                        Services
+                        Address
                       </label>
-                      {(watch('services') || ['']).map((service, index) => (
-                        <div key={index} className="flex gap-2 mb-2">
-                          <Input 
-                            value={service}
-                            onChange={(e) => {
-                              const services = [...(watch('services') || [''])];
-                              services[index] = e.target.value;
-                              handleFieldChange('services', services);
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => removeService(index)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={addService}
-                      >
-                        Add Service
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Phone
-                        </label>
-                        <Input 
-                          {...register('contactInfo.phone')}
-                          onChange={(e) => handleFieldChange('contactInfo.phone', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Email
-                        </label>
-                        <Input 
-                          {...register('contactInfo.email')}
-                          onChange={(e) => handleFieldChange('contactInfo.email', e.target.value)}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium mb-2">
-                          Address
-                        </label>
-                        <Input 
-                          {...register('contactInfo.address')}
-                          onChange={(e) => handleFieldChange('contactInfo.address', e.target.value)}
-                        />
-                      </div>
+                      <Input 
+                        value={content.contactInfo.address}
+                        onChange={(e) => handleFieldChange(['contactInfo', 'address'], e.target.value)}
+                      />
                     </div>
                   </div>
-                </TabsContent>
+                </div>
+              </TabsContent>
 
-                <TabsContent value="design">
-                  <div className="space-y-8 p-6">
-                    <div className="grid gap-6">
-                      <div className="space-y-4">
-                        <label className="block text-sm font-medium mb-2">
-                          Top Image
-                        </label>
-                        <div className="space-y-2">
-                          <Input
-                            type="url"
-                            placeholder="Enter image URL (e.g., https://images.unsplash.com/...)"
-                            value={watch('theme.topImage') || ''}
-                            onChange={(e) => handleFieldChange('theme.topImage', e.target.value)}
-                          />
-                          <p className="text-sm text-gray-500">
-                            Tip: Use a high-quality image from{' '}
-                            <a 
-                              href="https://unsplash.com" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-500 hover:underline"
-                            >
-                              Unsplash
-                            </a>
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <label className="block text-sm font-medium mb-2">
-                          Overlay Opacity
-                        </label>
-                        <div className="flex items-center gap-4">
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value={watch('theme.overlayOpacity') || 80}
-                            onChange={(e) => handleFieldChange('theme.overlayOpacity', parseInt(e.target.value))}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                          <span className="text-sm text-gray-600 w-12">
-                            {watch('theme.overlayOpacity')}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <label className="block text-sm font-medium mb-2">
-                          Primary Color
-                        </label>
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <Input
-                              type="color"
-                              value={watch('theme.primaryColor') || '#2563eb'}
-                              onChange={(e) => handleFieldChange('theme.primaryColor', e.target.value)}
-                              className="h-10 w-20 p-1 cursor-pointer"
-                            />
-                          </div>
-                          <Input
-                            type="text"
-                            value={watch('theme.primaryColor') || '#2563eb'}
-                            onChange={(e) => handleFieldChange('theme.primaryColor', e.target.value)}
-                            className="w-32 uppercase"
-                            maxLength={7}
-                          />
-                          <div 
-                            className="w-10 h-10 rounded border"
-                            style={{ backgroundColor: watch('theme.primaryColor') || '#2563eb' }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <label className="block text-sm font-medium mb-2">
-                          Secondary Color
-                        </label>
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <Input
-                              type="color"
-                              value={watch('theme.secondaryColor') || '#1e40af'}
-                              onChange={(e) => handleFieldChange('theme.secondaryColor', e.target.value)}
-                              className="h-10 w-20 p-1 cursor-pointer"
-                            />
-                          </div>
-                          <Input
-                            type="text"
-                            value={watch('theme.secondaryColor') || '#1e40af'}
-                            onChange={(e) => handleFieldChange('theme.secondaryColor', e.target.value)}
-                            className="w-32 uppercase"
-                            maxLength={7}
-                          />
-                          <div 
-                            className="w-10 h-10 rounded border"
-                            style={{ backgroundColor: watch('theme.secondaryColor') || '#1e40af' }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          handleFieldChange('theme.primaryColor', '#2563eb');
-                          handleFieldChange('theme.secondaryColor', '#1e40af');
-                        }}
-                        className="w-full"
-                      >
-                        Reset to Default Colors
-                      </Button>
-                    </div>
-
-                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                      <h3 className="text-sm font-medium mb-2">Color Preview</h3>
+              <TabsContent value="design">
+                <div className="space-y-8 p-6">
+                  <div className="grid gap-6">
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Top Image
+                      </label>
                       <div className="space-y-2">
-                        <div className="h-10 rounded" style={{ backgroundColor: watch('theme.primaryColor') || '#2563eb' }}>
-                          <div className="p-2 text-white text-sm">Primary Color</div>
-                        </div>
-                        <div className="h-10 rounded" style={{ backgroundColor: watch('theme.secondaryColor') || '#1e40af' }}>
-                          <div className="p-2 text-white text-sm">Secondary Color</div>
-                        </div>
+                        <Input
+                          type="url"
+                          placeholder="Enter image URL (e.g., https://images.unsplash.com/...)"
+                          value={content.theme.topImage}
+                          onChange={(e) => handleFieldChange(['theme', 'topImage'], e.target.value)}
+                        />
+                        <p className="text-sm text-gray-500">
+                          Tip: Use a high-quality image from{' '}
+                          <a 
+                            href="https://unsplash.com" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
+                            Unsplash
+                          </a>
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </TabsContent>
 
-                <TabsContent value="leadForm">
-                  <div className="space-y-6 p-6">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={watch('leadForm.enabled')}
-                        onChange={(e) => handleFieldChange('leadForm.enabled', e.target.checked)}
-                      />
-                      <label className="text-sm font-medium">
-                        Enable Lead Form
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Overlay Opacity
                       </label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={content.theme.overlayOpacity}
+                          onChange={(e) => handleFieldChange(['theme', 'overlayOpacity'], parseInt(e.target.value))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-sm text-gray-600 w-12">
+                          {content.theme.overlayOpacity}%
+                        </span>
+                      </div>
                     </div>
 
-                    {watch('leadForm.enabled') && (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={watch('leadForm.fields.name')}
-                            onChange={(e) => handleFieldChange('leadForm.fields.name', e.target.checked)}
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Primary Color
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Input
+                            type="color"
+                            value={content.theme.primaryColor}
+                            onChange={(e) => handleFieldChange(['theme', 'primaryColor'], e.target.value)}
+                            className="h-10 w-20 p-1 cursor-pointer"
                           />
-                          <label className="text-sm">Name Field</label>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={watch('leadForm.fields.email')}
-                            onChange={(e) => handleFieldChange('leadForm.fields.email', e.target.checked)}
-                          />
-                          <label className="text-sm">Email Field</label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={watch('leadForm.fields.phone')}
-                            onChange={(e) => handleFieldChange('leadForm.fields.phone', e.target.checked)}
-                          />
-                          <label className="text-sm">Phone Field</label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={watch('leadForm.fields.message')}
-                            onChange={(e) => handleFieldChange('leadForm.fields.message', e.target.checked)}
-                          />
-                          <label className="text-sm">Message Field</label>
-                        </div>
+                        <Input
+                          type="text"
+                          value={content.theme.primaryColor}
+                          onChange={(e) => handleFieldChange(['theme', 'primaryColor'], e.target.value)}
+                          className="w-32 uppercase"
+                          maxLength={7}
+                        />
+                        <div 
+                          className="w-10 h-10 rounded border"
+                          style={{ backgroundColor: content.theme.primaryColor }}
+                        />
                       </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </Card>
+                    </div>
 
-            <div className="flex justify-end gap-4">
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={mutation.isPending}
-                className="hover:bg-blue-700 active:bg-blue-800 transition-colors"
-              >
-                {mutation.isPending ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin">⌛</span> 
-                    Saving...
-                  </span>
-                ) : (
-                  'Save Changes'
-                )}
-              </Button>
-            </div>
-          </form>
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Secondary Color
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Input
+                            type="color"
+                            value={content.theme.secondaryColor}
+                            onChange={(e) => handleFieldChange(['theme', 'secondaryColor'], e.target.value)}
+                            className="h-10 w-20 p-1 cursor-pointer"
+                          />
+                        </div>
+                        <Input
+                          type="text"
+                          value={content.theme.secondaryColor}
+                          onChange={(e) => handleFieldChange(['theme', 'secondaryColor'], e.target.value)}
+                          className="w-32 uppercase"
+                          maxLength={7}
+                        />
+                        <div 
+                          className="w-10 h-10 rounded border"
+                          style={{ backgroundColor: content.theme.secondaryColor }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        handleFieldChange(['theme', 'primaryColor'], '#2563eb');
+                        handleFieldChange(['theme', 'secondaryColor'], '#1e40af');
+                      }}
+                      className="w-full"
+                    >
+                      Reset to Default Colors
+                    </Button>
+                  </div>
+
+                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="text-sm font-medium mb-2">Color Preview</h3>
+                    <div className="space-y-2">
+                      <div className="h-10 rounded" style={{ backgroundColor: content.theme.primaryColor }}>
+                        <div className="p-2 text-white text-sm">Primary Color</div>
+                      </div>
+                      <div className="h-10 rounded" style={{ backgroundColor: content.theme.secondaryColor }}>
+                        <div className="p-2 text-white text-sm">Secondary Color</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="leadForm">
+                <div className="space-y-6 p-6">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={content.leadForm.enabled}
+                      onChange={(e) => handleFieldChange(['leadForm', 'enabled'], e.target.checked)}
+                    />
+                    <label className="text-sm font-medium">
+                      Enable Lead Form
+                    </label>
+                  </div>
+
+                  {content.leadForm.enabled && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={content.leadForm.fields.name}
+                          onChange={(e) => handleFieldChange(['leadForm', 'fields', 'name'], e.target.checked)}
+                        />
+                        <label className="text-sm">Name Field</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={content.leadForm.fields.email}
+                          onChange={(e) => handleFieldChange(['leadForm', 'fields', 'email'], e.target.checked)}
+                        />
+                        <label className="text-sm">Email Field</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={content.leadForm.fields.phone}
+                          onChange={(e) => handleFieldChange(['leadForm', 'fields', 'phone'], e.target.checked)}
+                        />
+                        <label className="text-sm">Phone Field</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={content.leadForm.fields.message}
+                          onChange={(e) => handleFieldChange(['leadForm', 'fields', 'message'], e.target.checked)}
+                        />
+                        <label className="text-sm">Message Field</label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </Card>
         </div>
       )}
 
@@ -581,7 +445,7 @@ export default function WebsiteBuilder() {
           >
             {websiteUrl}
           </a>
-          {!currentContent.businessName && (
+          {!content.businessName && (
             <span className="text-red-500 ml-2">
               (Enter a business name to generate your website URL)
             </span>
