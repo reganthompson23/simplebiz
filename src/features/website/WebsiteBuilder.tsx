@@ -209,30 +209,73 @@ export default function WebsiteBuilder() {
     onSave: () => void;
     type?: string;
     component?: typeof Input | typeof Textarea;
-  }) => (
-    <div>
-      <label className="block text-sm font-medium mb-2">
-        {label}
-      </label>
-      <div className="flex gap-2">
-        <Component
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onSave}
-          disabled={isUpdating}
-          className="px-3"
-        >
-          <Save className="w-4 h-4" />
-        </Button>
+  }) => {
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [editValue, setEditValue] = React.useState(value);
+
+    // Update edit value when prop value changes
+    React.useEffect(() => {
+      setEditValue(value);
+    }, [value]);
+
+    const handleSave = () => {
+      onSave();
+      setIsEditing(false);
+    };
+
+    return (
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          {label}
+        </label>
+        <div className="flex gap-2">
+          <Component
+            type={type}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            disabled={!isEditing}
+            className="flex-1"
+          />
+          {!isEditing ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditing(true)}
+              className="px-3"
+            >
+              Edit
+            </Button>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  onChange(editValue);
+                  handleSave();
+                }}
+                disabled={isUpdating}
+                className="px-3"
+              >
+                <Save className="w-4 h-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditValue(value); // Reset to original value
+                }}
+                className="px-3"
+              >
+                Cancel
+              </Button>
+            </>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="container mx-auto py-8 px-6 max-w-7xl">
