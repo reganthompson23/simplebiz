@@ -221,7 +221,7 @@ export default function WebsiteBuilder() {
     value: string;
     path: string[];
     onChange: (value: string) => void;
-    onSave: () => void;
+    onSave: () => Promise<void>;
     type?: string;
     component?: typeof Input | typeof Textarea;
   }) => {
@@ -236,12 +236,17 @@ export default function WebsiteBuilder() {
     }, [value, isEditing]);
 
     const handleSave = async () => {
-      // First update the parent state
-      onChange(editValue);
-      // Then save to database
-      await onSave();
-      // Finally exit edit mode
-      setIsEditing(false);
+      try {
+        // First update the parent state
+        onChange(editValue);
+        // Then save to database using the current editValue
+        await handleSaveField(path, editValue);
+        // Finally exit edit mode
+        setIsEditing(false);
+      } catch (error) {
+        // If save fails, stay in edit mode
+        console.error('Save failed:', error);
+      }
     };
 
     return (
