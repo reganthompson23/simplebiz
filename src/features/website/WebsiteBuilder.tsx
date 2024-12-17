@@ -94,7 +94,6 @@ export default function WebsiteBuilder() {
             .select()
             .single();
           
-          console.log('Update result:', { data, error });
           if (error) throw error;
           return data;
         } else {
@@ -110,7 +109,6 @@ export default function WebsiteBuilder() {
             .select()
             .single();
           
-          console.log('Insert result:', { data, error });
           if (error) throw error;
           return data;
         }
@@ -119,8 +117,15 @@ export default function WebsiteBuilder() {
         throw error;
       }
     },
+    onMutate: () => {
+      // Optimistically update UI
+      toast({
+        title: 'Saving...',
+        description: 'Your changes are being saved.',
+        type: 'default',
+      });
+    },
     onSuccess: (data) => {
-      console.log('Mutation succeeded:', data);
       queryClient.invalidateQueries({ queryKey: ['website'] });
       toast({
         title: 'Success',
@@ -136,6 +141,10 @@ export default function WebsiteBuilder() {
         type: 'error',
       });
     },
+    onSettled: () => {
+      // Always run after completion (success or error)
+      queryClient.invalidateQueries({ queryKey: ['website'] });
+    }
   });
 
   const publishMutation = useMutation({
@@ -176,15 +185,16 @@ export default function WebsiteBuilder() {
   });
 
   const onSubmit = async (data: WebsiteContent) => {
-    console.log('Form submitted with data:', data);
-    
     if (!user?.id) {
-      console.error('No user ID found');
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to save changes.',
+        type: 'error',
+      });
       return;
     }
     
     if (mutation.isPending) {
-      console.log('Already saving, skipping...');
       return;
     }
     
@@ -215,16 +225,10 @@ export default function WebsiteBuilder() {
           }
         }
       };
-      console.log('Cleaned data for submission:', cleanedData);
       
       await mutation.mutateAsync(cleanedData);
     } catch (error) {
       console.error('Error in onSubmit:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save changes. Please try again.',
-        type: 'error',
-      });
     }
   };
 
