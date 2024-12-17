@@ -11,6 +11,7 @@ import { Textarea } from '../../components/ui/Textarea';
 import { Card } from '../../components/ui/Card';
 import { toast } from '../../components/ui/Toast';
 import WebsitePreview from './WebsitePreview';
+import { Save } from 'lucide-react';
 
 function generateSubdomain(businessName: string | undefined): string {
   if (!businessName) return '';
@@ -24,6 +25,9 @@ export default function WebsiteBuilder() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [previewMode, setPreviewMode] = React.useState(false);
+  
+  // Local state for field editing
+  const [editingContent, setEditingContent] = React.useState<WebsiteContent>(defaultContent);
   
   // Load website data
   const { data: website, isLoading, error: websiteError } = useQuery({
@@ -43,30 +47,57 @@ export default function WebsiteBuilder() {
     enabled: !!user?.id,
   });
 
+  // Update local state when website data loads
+  React.useEffect(() => {
+    if (website?.content) {
+      setEditingContent(website.content);
+    }
+  }, [website]);
+
   // Get our atomic update functions
   const { updateField, updateArray, isUpdating } = useWebsiteContent(website?.id);
 
-  // Handle field changes
+  // Handle field changes (local state only)
   const handleFieldChange = (path: string[], value: any) => {
-    updateField(path, value);
-  };
-
-  // Handle service changes
-  const addService = () => {
-    updateArray.mutate({
-      path: ['services'],
-      operation: 'add',
-      value: ''
+    setEditingContent(prev => {
+      const newContent = { ...prev };
+      let current = newContent;
+      for (let i = 0; i < path.length - 1; i++) {
+        current = current[path[i]];
+      }
+      current[path[path.length - 1]] = value;
+      return newContent;
     });
   };
 
-  const updateService = (index: number, value: string) => {
+  // Handle saving a field
+  const handleSaveField = (path: string[], value: any) => {
+    updateField(path, value);
+  };
+
+  // Handle service changes (local state)
+  const handleServiceChange = (index: number, value: string) => {
+    setEditingContent(prev => {
+      const newServices = [...prev.services];
+      newServices[index] = value;
+      return { ...prev, services: newServices };
+    });
+  };
+
+  const handleSaveService = (index: number, value: string) => {
     updateArray.mutate({
       path: ['services'],
       operation: 'update',
       index,
       value
     });
+  };
+
+  const addService = () => {
+    setEditingContent(prev => ({
+      ...prev,
+      services: [...prev.services, '']
+    }));
   };
 
   const removeService = (index: number) => {
@@ -132,6 +163,48 @@ export default function WebsiteBuilder() {
   const baseUrl = 'https://simplebizsites.netlify.app';
   const websiteUrl = `${baseUrl}/sites/${previewSubdomain}`;
 
+  // Helper component for input fields with save button
+  const FieldWithSave = ({ 
+    label, 
+    value, 
+    path, 
+    onChange, 
+    onSave,
+    type = 'text',
+    component: Component = Input
+  }: { 
+    label: string;
+    value: string;
+    path: string[];
+    onChange: (value: string) => void;
+    onSave: () => void;
+    type?: string;
+    component?: typeof Input | typeof Textarea;
+  }) => (
+    <div>
+      <label className="block text-sm font-medium mb-2">
+        {label}
+      </label>
+      <div className="flex gap-2">
+        <Component
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onSave}
+          disabled={isUpdating}
+          className="px-3"
+        >
+          <Save className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="container mx-auto py-8 px-6 max-w-7xl">
       <div className="flex justify-between items-center mb-8 px-2">
@@ -167,36 +240,43 @@ export default function WebsiteBuilder() {
 
               <TabsContent value="content">
                 <div className="space-y-6 p-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Business Name
-                    </label>
-                    <Input 
-                      value={content.businessName}
-                      onChange={(e) => handleFieldChange(['businessName'], e.target.value)}
-                    />
-                  </div>
+                  <FieldWithSave
+                    label="Business Name"
+                    value={editingContent.businessName}
+                    path={['businessName']}
+                    onChange={(value) => handleFieldChange(['businessName'], value)}
+                    onSave={() => handleSaveField(['businessName'], editingContent.businessName)}
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      About Us
-                    </label>
-                    <Textarea 
-                      value={content.aboutUs}
-                      onChange={(e) => handleFieldChange(['aboutUs'], e.target.value)}
-                    />
-                  </div>
+                  <FieldWithSave
+                    label="About Us"
+                    value={editingContent.aboutUs}
+                    path={['aboutUs']}
+                    onChange={(value) => handleFieldChange(['aboutUs'], value)}
+                    onSave={() => handleSaveField(['aboutUs'], editingContent.aboutUs)}
+                    component={Textarea}
+                  />
 
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Services
                     </label>
-                    {content.services.map((service, index) => (
+                    {editingContent.services.map((service, index) => (
                       <div key={index} className="flex gap-2 mb-2">
                         <Input 
                           value={service}
-                          onChange={(e) => updateService(index, e.target.value)}
+                          onChange={(e) => handleServiceChange(index, e.target.value)}
+                          className="flex-1"
                         />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSaveService(index, service)}
+                          disabled={isUpdating}
+                          className="px-3"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
                         <Button
                           type="button"
                           variant="outline"
@@ -216,31 +296,27 @@ export default function WebsiteBuilder() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Phone
-                      </label>
-                      <Input 
-                        value={content.contactInfo.phone}
-                        onChange={(e) => handleFieldChange(['contactInfo', 'phone'], e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Email
-                      </label>
-                      <Input 
-                        value={content.contactInfo.email}
-                        onChange={(e) => handleFieldChange(['contactInfo', 'email'], e.target.value)}
-                      />
-                    </div>
+                    <FieldWithSave
+                      label="Phone"
+                      value={editingContent.contactInfo.phone}
+                      path={['contactInfo', 'phone']}
+                      onChange={(value) => handleFieldChange(['contactInfo', 'phone'], value)}
+                      onSave={() => handleSaveField(['contactInfo', 'phone'], editingContent.contactInfo.phone)}
+                    />
+                    <FieldWithSave
+                      label="Email"
+                      value={editingContent.contactInfo.email}
+                      path={['contactInfo', 'email']}
+                      onChange={(value) => handleFieldChange(['contactInfo', 'email'], value)}
+                      onSave={() => handleSaveField(['contactInfo', 'email'], editingContent.contactInfo.email)}
+                    />
                     <div className="col-span-2">
-                      <label className="block text-sm font-medium mb-2">
-                        Address
-                      </label>
-                      <Input 
-                        value={content.contactInfo.address}
-                        onChange={(e) => handleFieldChange(['contactInfo', 'address'], e.target.value)}
+                      <FieldWithSave
+                        label="Address"
+                        value={editingContent.contactInfo.address}
+                        path={['contactInfo', 'address']}
+                        onChange={(value) => handleFieldChange(['contactInfo', 'address'], value)}
+                        onSave={() => handleSaveField(['contactInfo', 'address'], editingContent.contactInfo.address)}
                       />
                     </div>
                   </div>
@@ -250,30 +326,14 @@ export default function WebsiteBuilder() {
               <TabsContent value="design">
                 <div className="space-y-8 p-6">
                   <div className="grid gap-6">
-                    <div className="space-y-4">
-                      <label className="block text-sm font-medium mb-2">
-                        Top Image
-                      </label>
-                      <div className="space-y-2">
-                        <Input
-                          type="url"
-                          placeholder="Enter image URL (e.g., https://images.unsplash.com/...)"
-                          value={content.theme.topImage}
-                          onChange={(e) => handleFieldChange(['theme', 'topImage'], e.target.value)}
-                        />
-                        <p className="text-sm text-gray-500">
-                          Tip: Use a high-quality image from{' '}
-                          <a 
-                            href="https://unsplash.com" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline"
-                          >
-                            Unsplash
-                          </a>
-                        </p>
-                      </div>
-                    </div>
+                    <FieldWithSave
+                      label="Top Image"
+                      value={editingContent.theme.topImage}
+                      path={['theme', 'topImage']}
+                      onChange={(value) => handleFieldChange(['theme', 'topImage'], value)}
+                      onSave={() => handleSaveField(['theme', 'topImage'], editingContent.theme.topImage)}
+                      type="url"
+                    />
 
                     <div className="space-y-4">
                       <label className="block text-sm font-medium mb-2">
@@ -285,13 +345,22 @@ export default function WebsiteBuilder() {
                           min="0"
                           max="100"
                           step="1"
-                          value={content.theme.overlayOpacity}
+                          value={editingContent.theme.overlayOpacity}
                           onChange={(e) => handleFieldChange(['theme', 'overlayOpacity'], parseInt(e.target.value))}
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                         />
                         <span className="text-sm text-gray-600 w-12">
-                          {content.theme.overlayOpacity}%
+                          {editingContent.theme.overlayOpacity}%
                         </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSaveField(['theme', 'overlayOpacity'], editingContent.theme.overlayOpacity)}
+                          disabled={isUpdating}
+                          className="px-3"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
 
@@ -303,22 +372,31 @@ export default function WebsiteBuilder() {
                         <div className="relative">
                           <Input
                             type="color"
-                            value={content.theme.primaryColor}
+                            value={editingContent.theme.primaryColor}
                             onChange={(e) => handleFieldChange(['theme', 'primaryColor'], e.target.value)}
                             className="h-10 w-20 p-1 cursor-pointer"
                           />
                         </div>
                         <Input
                           type="text"
-                          value={content.theme.primaryColor}
+                          value={editingContent.theme.primaryColor}
                           onChange={(e) => handleFieldChange(['theme', 'primaryColor'], e.target.value)}
                           className="w-32 uppercase"
                           maxLength={7}
                         />
                         <div 
                           className="w-10 h-10 rounded border"
-                          style={{ backgroundColor: content.theme.primaryColor }}
+                          style={{ backgroundColor: editingContent.theme.primaryColor }}
                         />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSaveField(['theme', 'primaryColor'], editingContent.theme.primaryColor)}
+                          disabled={isUpdating}
+                          className="px-3"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
 
@@ -330,22 +408,31 @@ export default function WebsiteBuilder() {
                         <div className="relative">
                           <Input
                             type="color"
-                            value={content.theme.secondaryColor}
+                            value={editingContent.theme.secondaryColor}
                             onChange={(e) => handleFieldChange(['theme', 'secondaryColor'], e.target.value)}
                             className="h-10 w-20 p-1 cursor-pointer"
                           />
                         </div>
                         <Input
                           type="text"
-                          value={content.theme.secondaryColor}
+                          value={editingContent.theme.secondaryColor}
                           onChange={(e) => handleFieldChange(['theme', 'secondaryColor'], e.target.value)}
                           className="w-32 uppercase"
                           maxLength={7}
                         />
                         <div 
                           className="w-10 h-10 rounded border"
-                          style={{ backgroundColor: content.theme.secondaryColor }}
+                          style={{ backgroundColor: editingContent.theme.secondaryColor }}
                         />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSaveField(['theme', 'secondaryColor'], editingContent.theme.secondaryColor)}
+                          disabled={isUpdating}
+                          className="px-3"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -357,6 +444,8 @@ export default function WebsiteBuilder() {
                       onClick={() => {
                         handleFieldChange(['theme', 'primaryColor'], '#2563eb');
                         handleFieldChange(['theme', 'secondaryColor'], '#1e40af');
+                        handleSaveField(['theme', 'primaryColor'], '#2563eb');
+                        handleSaveField(['theme', 'secondaryColor'], '#1e40af');
                       }}
                       className="w-full"
                     >
@@ -367,10 +456,10 @@ export default function WebsiteBuilder() {
                   <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                     <h3 className="text-sm font-medium mb-2">Color Preview</h3>
                     <div className="space-y-2">
-                      <div className="h-10 rounded" style={{ backgroundColor: content.theme.primaryColor }}>
+                      <div className="h-10 rounded" style={{ backgroundColor: editingContent.theme.primaryColor }}>
                         <div className="p-2 text-white text-sm">Primary Color</div>
                       </div>
-                      <div className="h-10 rounded" style={{ backgroundColor: content.theme.secondaryColor }}>
+                      <div className="h-10 rounded" style={{ backgroundColor: editingContent.theme.secondaryColor }}>
                         <div className="p-2 text-white text-sm">Secondary Color</div>
                       </div>
                     </div>
@@ -380,51 +469,47 @@ export default function WebsiteBuilder() {
 
               <TabsContent value="leadForm">
                 <div className="space-y-6 p-6">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-4">
                     <input
                       type="checkbox"
-                      checked={content.leadForm.enabled}
+                      checked={editingContent.leadForm.enabled}
                       onChange={(e) => handleFieldChange(['leadForm', 'enabled'], e.target.checked)}
                     />
                     <label className="text-sm font-medium">
                       Enable Lead Form
                     </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleSaveField(['leadForm', 'enabled'], editingContent.leadForm.enabled)}
+                      disabled={isUpdating}
+                      className="px-3 ml-auto"
+                    >
+                      <Save className="w-4 h-4" />
+                    </Button>
                   </div>
 
-                  {content.leadForm.enabled && (
+                  {editingContent.leadForm.enabled && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={content.leadForm.fields.name}
-                          onChange={(e) => handleFieldChange(['leadForm', 'fields', 'name'], e.target.checked)}
-                        />
-                        <label className="text-sm">Name Field</label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={content.leadForm.fields.email}
-                          onChange={(e) => handleFieldChange(['leadForm', 'fields', 'email'], e.target.checked)}
-                        />
-                        <label className="text-sm">Email Field</label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={content.leadForm.fields.phone}
-                          onChange={(e) => handleFieldChange(['leadForm', 'fields', 'phone'], e.target.checked)}
-                        />
-                        <label className="text-sm">Phone Field</label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={content.leadForm.fields.message}
-                          onChange={(e) => handleFieldChange(['leadForm', 'fields', 'message'], e.target.checked)}
-                        />
-                        <label className="text-sm">Message Field</label>
-                      </div>
+                      {Object.entries(editingContent.leadForm.fields).map(([field, enabled]) => (
+                        <div key={field} className="flex items-center gap-4">
+                          <input
+                            type="checkbox"
+                            checked={enabled}
+                            onChange={(e) => handleFieldChange(['leadForm', 'fields', field], e.target.checked)}
+                          />
+                          <label className="text-sm">{field.charAt(0).toUpperCase() + field.slice(1)} Field</label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleSaveField(['leadForm', 'fields', field], editingContent.leadForm.fields[field])}
+                            disabled={isUpdating}
+                            className="px-3 ml-auto"
+                          >
+                            <Save className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
