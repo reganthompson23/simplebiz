@@ -26,6 +26,8 @@ export default function ExpenseForm() {
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
+  console.log('Current user:', user); // Debug log for user authentication
+
   // Fetch existing expense if editing
   const { data: existingExpense, isLoading } = useQuery({
     queryKey: ['expense', expenseId],
@@ -48,7 +50,10 @@ export default function ExpenseForm() {
   const { data: categories } = useQuery({
     queryKey: ['expense-categories'],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('No user ID available for fetching categories'); // Debug log
+        return [];
+      }
 
       const { data, error } = await supabase
         .from('expenses')
@@ -56,7 +61,10 @@ export default function ExpenseForm() {
         .eq('profile_id', user.id)
         .order('category');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching categories:', error); // Debug log
+        throw error;
+      }
 
       // Get unique categories
       const uniqueCategories = Array.from(new Set(data.map(item => item.category)));
@@ -65,7 +73,7 @@ export default function ExpenseForm() {
     enabled: !!user?.id
   });
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ExpenseFormData>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ExpenseFormData>({
     defaultValues: {
       date: today,
       amount: undefined,
@@ -90,11 +98,13 @@ export default function ExpenseForm() {
     console.log('Form submitted with data:', data); // Debug log
 
     if (!user?.id) {
+      console.error('No user ID available - user not authenticated'); // Debug log
       toast({
-        title: 'Error',
-        description: 'You must be logged in to create expenses',
+        title: 'Authentication Error',
+        description: 'Please log in to create expenses',
         type: 'error',
       });
+      navigate('/login');
       return;
     }
 
@@ -106,9 +116,10 @@ export default function ExpenseForm() {
       console.log('Formatted amount:', formattedAmount); // Debug log
       
       if (isNaN(formattedAmount) || formattedAmount <= 0) {
+        console.error('Invalid amount:', formattedAmount); // Debug log
         toast({
-          title: 'Error',
-          description: 'Please enter a valid amount',
+          title: 'Validation Error',
+          description: 'Please enter a valid amount greater than 0',
           type: 'error',
         });
         return;
@@ -120,28 +131,31 @@ export default function ExpenseForm() {
       // Ensure we have a valid date (use today if somehow the date is missing)
       const expenseDate = data.date || today;
       
-      console.log('Submitting to Supabase:', {
+      const expenseData = {
+        profile_id: user.id,
         amount: finalAmount,
         category: data.category,
         description: data.description,
         date: expenseDate
-      }); // Debug log
+      };
+      
+      console.log('Submitting expense data to Supabase:', expenseData); // Debug log
 
       if (expenseId) {
         // Update existing expense
         const { error } = await supabase
           .from('expenses')
           .update({
-            amount: finalAmount,
-            category: data.category,
-            description: data.description,
-            date: expenseDate,
+            ...expenseData,
             updated_at: new Date().toISOString()
           })
           .eq('id', expenseId)
           .eq('profile_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating expense:', error); // Debug log
+          throw error;
+        }
 
         toast({
           title: 'Success',
@@ -152,18 +166,12 @@ export default function ExpenseForm() {
         // Create new expense
         const { data: newExpense, error } = await supabase
           .from('expenses')
-          .insert({
-            profile_id: user.id,
-            amount: finalAmount,
-            category: data.category,
-            description: data.description,
-            date: expenseDate
-          })
+          .insert(expenseData)
           .select()
           .single();
 
         if (error) {
-          console.error('Supabase error:', error); // Debug log
+          console.error('Error creating expense:', error); // Debug log
           throw error;
         }
 
