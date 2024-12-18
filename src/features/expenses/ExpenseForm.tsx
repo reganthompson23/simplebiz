@@ -24,6 +24,7 @@ export default function ExpenseForm() {
   const { user } = useAuth();
   const [categoryInput, setCategoryInput] = useState('');
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
 
   // Fetch existing expense if editing
   const { data: existingExpense, isLoading } = useQuery({
@@ -66,7 +67,7 @@ export default function ExpenseForm() {
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ExpenseFormData>({
     defaultValues: {
-      date: new Date().toISOString().split('T')[0],
+      date: today,
       amount: undefined,
       category: '',
       description: ''
@@ -285,12 +286,10 @@ export default function ExpenseForm() {
           <div className="mt-1">
             <Input
               type="date"
-              {...register('date', { required: 'Date is required' })}
+              defaultValue={today}
+              {...register('date')}
               className="block w-full"
             />
-            {errors.date && (
-              <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
-            )}
           </div>
         </div>
 
