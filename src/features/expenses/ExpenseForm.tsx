@@ -87,6 +87,8 @@ export default function ExpenseForm() {
   }, [existingExpense, setValue]);
 
   const onSubmit = async (data: ExpenseFormData) => {
+    console.log('Form submitted with data:', data); // Debug log
+
     if (!user?.id) {
       toast({
         title: 'Error',
@@ -98,8 +100,10 @@ export default function ExpenseForm() {
 
     try {
       // Clean and format the amount
-      const cleanAmount = data.amount.toString().replace(/[^0-9.]/g, '');
+      const cleanAmount = data.amount?.toString().replace(/[^0-9.]/g, '') || '0';
       const formattedAmount = parseFloat(cleanAmount);
+      
+      console.log('Formatted amount:', formattedAmount); // Debug log
       
       if (isNaN(formattedAmount) || formattedAmount <= 0) {
         toast({
@@ -112,9 +116,16 @@ export default function ExpenseForm() {
 
       // Round to 2 decimal places
       const finalAmount = Math.round(formattedAmount * 100) / 100;
-
+      
       // Ensure we have a valid date (use today if somehow the date is missing)
       const expenseDate = data.date || today;
+      
+      console.log('Submitting to Supabase:', {
+        amount: finalAmount,
+        category: data.category,
+        description: data.description,
+        date: expenseDate
+      }); // Debug log
 
       if (expenseId) {
         // Update existing expense
@@ -139,7 +150,7 @@ export default function ExpenseForm() {
         });
       } else {
         // Create new expense
-        const { error } = await supabase
+        const { data: newExpense, error } = await supabase
           .from('expenses')
           .insert({
             profile_id: user.id,
@@ -147,9 +158,16 @@ export default function ExpenseForm() {
             category: data.category,
             description: data.description,
             date: expenseDate
-          });
+          })
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error); // Debug log
+          throw error;
+        }
+
+        console.log('Created expense:', newExpense); // Debug log
 
         toast({
           title: 'Success',
@@ -163,6 +181,7 @@ export default function ExpenseForm() {
       await queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
       navigate('/expenses');
     } catch (error: any) {
+      console.error('Error in form submission:', error); // Debug log
       toast({
         title: 'Error',
         description: error.message || 'Failed to save expense',
@@ -195,7 +214,13 @@ export default function ExpenseForm() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form 
+        onSubmit={handleSubmit((data) => {
+          console.log('Form submitted, calling onSubmit with:', data); // Debug log
+          onSubmit(data);
+        })} 
+        className="space-y-6"
+      >
         <div>
           <label className="block text-sm font-medium text-gray-700">Amount</label>
           <div className="mt-1">
