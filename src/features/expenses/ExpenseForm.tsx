@@ -96,9 +96,11 @@ export default function ExpenseForm() {
     }
 
     try {
-      // Format the amount properly
-      const formattedAmount = parseFloat(data.amount.toString());
-      if (isNaN(formattedAmount)) {
+      // Clean and format the amount
+      const cleanAmount = data.amount.toString().replace(/[^0-9.]/g, '');
+      const formattedAmount = parseFloat(cleanAmount);
+      
+      if (isNaN(formattedAmount) || formattedAmount <= 0) {
         toast({
           title: 'Error',
           description: 'Please enter a valid amount',
@@ -107,12 +109,15 @@ export default function ExpenseForm() {
         return;
       }
 
+      // Round to 2 decimal places
+      const finalAmount = Math.round(formattedAmount * 100) / 100;
+
       if (expenseId) {
         // Update existing expense
         const { error } = await supabase
           .from('expenses')
           .update({
-            amount: formattedAmount,
+            amount: finalAmount,
             category: data.category,
             description: data.description,
             date: data.date,
@@ -134,7 +139,7 @@ export default function ExpenseForm() {
           .from('expenses')
           .insert({
             profile_id: user.id,
-            amount: formattedAmount,
+            amount: finalAmount,
             category: data.category,
             description: data.description,
             date: data.date
@@ -191,17 +196,30 @@ export default function ExpenseForm() {
           <label className="block text-sm font-medium text-gray-700">Amount</label>
           <div className="mt-1">
             <Input
-              type="number"
-              step="any"
+              type="text"
               {...register('amount', { 
                 required: 'Amount is required',
                 validate: value => {
-                  const num = parseFloat(value);
+                  // Remove any non-numeric characters except decimal point
+                  const cleanValue = value.replace(/[^0-9.]/g, '');
+                  const num = parseFloat(cleanValue);
                   return !isNaN(num) && num > 0 || 'Amount must be greater than 0';
                 }
               })}
               className="block w-full"
               placeholder="0.00"
+              // Format the input as the user types
+              onChange={(e) => {
+                let value = e.target.value;
+                // Remove any non-numeric characters except decimal point
+                value = value.replace(/[^0-9.]/g, '');
+                // Ensure only one decimal point
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                  value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                setValue('amount', value);
+              }}
             />
             {errors.amount && (
               <p className="mt-1 text-sm text-red-600">{errors.amount.message}</p>
