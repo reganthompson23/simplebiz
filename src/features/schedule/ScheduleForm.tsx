@@ -46,9 +46,30 @@ export default function ScheduleForm() {
     }
 
     try {
-      // Combine date and time into ISO strings
-      const startDateTime = new Date(`${data.start_date}T${data.start_time}`).toISOString();
-      const endDateTime = new Date(`${data.start_date}T${data.end_time}`).toISOString();
+      // Format the date and time strings properly
+      const formatTimeString = (timeStr: string) => {
+        // Ensure the time string has seconds
+        return timeStr.includes(':') ? 
+          timeStr.split(':').length === 2 ? `${timeStr}:00` : timeStr 
+          : `${timeStr}:00:00`;
+      };
+
+      const startTime = formatTimeString(data.start_time);
+      const endTime = formatTimeString(data.end_time);
+
+      // Create ISO strings with the formatted time
+      const startDateTime = new Date(`${data.start_date}T${startTime}`);
+      const endDateTime = new Date(`${data.start_date}T${endTime}`);
+
+      // Validate that the dates are valid
+      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        toast({
+          title: 'Validation Error',
+          description: 'Invalid date or time format',
+          type: 'error',
+        });
+        return;
+      }
 
       // Validate that end time is after start time
       if (endDateTime <= startDateTime) {
@@ -63,8 +84,8 @@ export default function ScheduleForm() {
       const scheduleContent: ScheduleContent = {
         customer_name: data.customer_name,
         description: data.description,
-        start_time: startDateTime,
-        end_time: endDateTime,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
         location: data.location
       };
 
@@ -87,6 +108,7 @@ export default function ScheduleForm() {
       await queryClient.invalidateQueries({ queryKey: ['schedule'] });
       navigate('/schedule');
     } catch (error: any) {
+      console.error('Schedule creation error:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to create appointment',
