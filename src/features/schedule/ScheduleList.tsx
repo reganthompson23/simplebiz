@@ -16,8 +16,6 @@ export default function ScheduleList() {
   const { data: scheduleEntries, isLoading, error } = useQuery({
     queryKey: ['schedule', filter],
     queryFn: async () => {
-      const now = new Date().toISOString();
-      
       const { data, error } = await supabase
         .from('schedule')
         .select('*')
