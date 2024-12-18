@@ -262,10 +262,9 @@ export default function ExpenseForm() {
             <Input
               type="text"
               {...register('category', { required: 'Category is required' })}
-              value={categoryInput}
               onChange={(e) => {
-                setCategoryInput(e.target.value);
                 setValue('category', e.target.value);
+                setCategoryInput(e.target.value);
                 setShowCategorySuggestions(true);
               }}
               onFocus={() => setShowCategorySuggestions(true)}
@@ -280,8 +279,8 @@ export default function ExpenseForm() {
                     key={category}
                     className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50"
                     onClick={() => {
+                      setValue('category', category, { shouldValidate: true });
                       setCategoryInput(category);
-                      setValue('category', category);
                       setShowCategorySuggestions(false);
                     }}
                   >
