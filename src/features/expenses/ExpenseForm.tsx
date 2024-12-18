@@ -67,7 +67,7 @@ export default function ExpenseForm() {
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<ExpenseFormData>({
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
-      amount: 0,
+      amount: undefined,
       category: '',
       description: ''
     }
@@ -180,13 +180,17 @@ export default function ExpenseForm() {
           <div className="mt-1">
             <Input
               type="number"
-              step="0.01"
+              step="any"
               {...register('amount', { 
                 required: 'Amount is required',
                 min: { value: 0.01, message: 'Amount must be greater than 0' },
-                valueAsNumber: true
+                setValueAs: (value) => {
+                  const num = parseFloat(value);
+                  return isNaN(num) ? undefined : Number(num.toFixed(2));
+                }
               })}
               className="block w-full"
+              placeholder="0.00"
             />
             {errors.amount && (
               <p className="mt-1 text-sm text-red-600">{errors.amount.message}</p>
@@ -252,6 +256,7 @@ export default function ExpenseForm() {
           <div className="mt-1">
             <Input
               type="date"
+              defaultValue={new Date().toISOString().split('T')[0]}
               {...register('date', { required: 'Date is required' })}
               className="block w-full"
             />
