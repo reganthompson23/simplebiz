@@ -23,11 +23,11 @@ export default function ScheduleList() {
         .select('*');
       
       if (filter === 'upcoming') {
-        query.gte('content->>start_time', now)
-          .order('content->>start_time', { ascending: true });
+        query.gte('content->start_time', now)
+          .order('content->start_time', { ascending: true });
       } else {
-        query.lt('content->>start_time', now)
-          .order('content->>start_time', { ascending: false });
+        query.lt('content->start_time', now)
+          .order('content->start_time', { ascending: false });
       }
       
       const { data, error } = await query;
