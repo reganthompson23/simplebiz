@@ -110,8 +110,11 @@ export default function ScheduleForm() {
 
       <form 
         onSubmit={(e) => {
-          console.log('Form submitted!');
-          console.log('Form values:', e.target);
+          e.preventDefault();
+          const formData = new FormData(e.target as HTMLFormElement);
+          const data = Object.fromEntries(formData.entries());
+          console.log('Raw form data:', data);
+          
           handleSubmit(onSubmit)(e);
         }} 
         className="space-y-6"
@@ -122,6 +125,7 @@ export default function ScheduleForm() {
             <Input
               type="text"
               {...register('customer_name', { required: 'Customer name is required' })}
+              name="customer_name"
               className="block w-full"
               placeholder="Enter customer name"
             />
@@ -137,6 +141,7 @@ export default function ScheduleForm() {
             <Input
               type="text"
               {...register('description', { required: 'Description is required' })}
+              name="description"
               className="block w-full"
               placeholder="Enter appointment description"
             />
@@ -151,13 +156,8 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="date"
-              {...register('start_date', { 
-                required: 'Date is required',
-                validate: value => {
-                  const date = new Date(value);
-                  return !isNaN(date.getTime()) || 'Invalid date';
-                }
-              })}
+              {...register('start_date', { required: 'Date is required' })}
+              name="start_date"
               className="block w-full"
               min={today}
             />
@@ -180,6 +180,7 @@ export default function ScheduleForm() {
                     message: 'Invalid time format'
                   }
                 })}
+                name="start_time"
                 className="block w-full"
               />
               {errors.start_time && (
@@ -206,6 +207,7 @@ export default function ScheduleForm() {
                     return end > start || 'End time must be after start time';
                   }
                 })}
+                name="end_time"
                 className="block w-full"
               />
               {errors.end_time && (
@@ -221,6 +223,7 @@ export default function ScheduleForm() {
             <Input
               type="text"
               {...register('location')}
+              name="location"
               className="block w-full"
               placeholder="Enter appointment location"
             />
