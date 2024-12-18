@@ -25,20 +25,39 @@ export default function ScheduleForm() {
   const { user } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
-  const { register, handleSubmit } = useForm<ScheduleFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<ScheduleFormData>({
     defaultValues: {
       start_date: today,
       start_time: '09:00',
       end_time: '10:00'
-    }
+    },
+    mode: 'onSubmit'
   });
 
   const onSubmit = async (data: ScheduleFormData) => {
     try {
       if (!user?.id) return navigate('/login');
 
-      const startDateTime = new Date(`${data.start_date}T${data.start_time}:00`);
-      const endDateTime = new Date(`${data.start_date}T${data.end_time}:00`);
+      console.log('Form data received:', data);
+      
+      const startDateTime = new Date(data.start_date);
+      startDateTime.setHours(
+        parseInt(data.start_time.split(':')[0]),
+        parseInt(data.start_time.split(':')[1])
+      );
+
+      const endDateTime = new Date(data.start_date);
+      endDateTime.setHours(
+        parseInt(data.end_time.split(':')[0]),
+        parseInt(data.end_time.split(':')[1])
+      );
+      
+      console.log('Parsed dates:', {
+        startDateTime: startDateTime.toISOString(),
+        endDateTime: endDateTime.toISOString(),
+        localStartTime: startDateTime.toLocaleString(),
+        localEndTime: endDateTime.toLocaleString()
+      });
 
       const scheduleContent: ScheduleContent = {
         customer_name: data.customer_name,
@@ -48,18 +67,25 @@ export default function ScheduleForm() {
         location: data.location || null
       };
 
-      const { error } = await supabase
+      console.log('Schedule content to be saved:', scheduleContent);
+
+      const { error, data: savedData } = await supabase
         .from('schedule')
         .insert({
           profile_id: user.id,
           content: scheduleContent
-        });
+        })
+        .select()
+        .single();
+
+      console.log('Supabase response:', { error, savedData });
 
       if (error) throw error;
 
       await queryClient.invalidateQueries({ queryKey: ['schedule'] });
       navigate('/schedule');
     } catch (error: any) {
+      console.error('Error submitting form:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to create appointment',
@@ -88,10 +114,13 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="text"
-              {...register('customer_name')}
+              {...register('customer_name', { required: 'Customer name is required' })}
               className="block w-full"
               placeholder="Enter customer name"
             />
+            {errors.customer_name && (
+              <p className="mt-1 text-sm text-red-600">{errors.customer_name.message}</p>
+            )}
           </div>
         </div>
 
@@ -100,10 +129,13 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="text"
-              {...register('description')}
+              {...register('description', { required: 'Description is required' })}
               className="block w-full"
               placeholder="Enter appointment description"
             />
+            {errors.description && (
+              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+            )}
           </div>
         </div>
 
@@ -112,10 +144,19 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="date"
-              {...register('start_date')}
+              {...register('start_date', { 
+                required: 'Date is required',
+                validate: value => {
+                  const date = new Date(value);
+                  return !isNaN(date.getTime()) || 'Invalid date';
+                }
+              })}
               className="block w-full"
               min={today}
             />
+            {errors.start_date && (
+              <p className="mt-1 text-sm text-red-600">{errors.start_date.message}</p>
+            )}
           </div>
         </div>
 
@@ -125,9 +166,18 @@ export default function ScheduleForm() {
             <div className="mt-1">
               <Input
                 type="time"
-                {...register('start_time')}
+                {...register('start_time', { 
+                  required: 'Start time is required',
+                  pattern: {
+                    value: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+                    message: 'Invalid time format'
+                  }
+                })}
                 className="block w-full"
               />
+              {errors.start_time && (
+                <p className="mt-1 text-sm text-red-600">{errors.start_time.message}</p>
+              )}
             </div>
           </div>
 
@@ -136,9 +186,24 @@ export default function ScheduleForm() {
             <div className="mt-1">
               <Input
                 type="time"
-                {...register('end_time')}
+                {...register('end_time', { 
+                  required: 'End time is required',
+                  pattern: {
+                    value: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+                    message: 'Invalid time format'
+                  },
+                  validate: (value, formValues) => {
+                    if (!formValues.start_time) return true;
+                    const start = new Date(`1970-01-01T${formValues.start_time}`);
+                    const end = new Date(`1970-01-01T${value}`);
+                    return end > start || 'End time must be after start time';
+                  }
+                })}
                 className="block w-full"
               />
+              {errors.end_time && (
+                <p className="mt-1 text-sm text-red-600">{errors.end_time.message}</p>
+              )}
             </div>
           </div>
         </div>
