@@ -18,22 +18,32 @@ export default function ScheduleList() {
     queryFn: async () => {
       const now = new Date().toISOString();
       
-      const query = supabase
+      const { data, error } = await supabase
         .from('schedule')
-        .select('*');
-      
-      if (filter === 'upcoming') {
-        query.gte('content->start_time', now)
-          .order('content->start_time', { ascending: true });
-      } else {
-        query.lt('content->start_time', now)
-          .order('content->start_time', { ascending: false });
-      }
-      
-      const { data, error } = await query;
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as ScheduleEntry[];
+
+      // Filter in JavaScript instead of SQL due to JSONB complexity
+      const filtered = (data as ScheduleEntry[]).filter(entry => {
+        const startTime = new Date(entry.content.start_time);
+        const currentTime = new Date();
+        return filter === 'upcoming' 
+          ? startTime >= currentTime 
+          : startTime < currentTime;
+      });
+
+      // Sort by start time
+      filtered.sort((a, b) => {
+        const aTime = new Date(a.content.start_time).getTime();
+        const bTime = new Date(b.content.start_time).getTime();
+        return filter === 'upcoming' 
+          ? aTime - bTime  // ascending for upcoming
+          : bTime - aTime; // descending for past
+      });
+
+      return filtered;
     },
   });
 
