@@ -141,14 +141,6 @@ export default function ExpenseList() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => navigate(`/expenses/${expense.id}/edit`)}
-                        className="mr-2"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
                         onClick={() => handleDelete(expense.id)}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
