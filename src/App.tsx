@@ -11,6 +11,7 @@ import ExpenseList from './features/expenses/ExpenseList';
 import ExpenseForm from './features/expenses/ExpenseForm';
 import ScheduleList from './features/schedule/ScheduleList';
 import ScheduleForm from './features/schedule/ScheduleForm';
+import ScheduleFormV2 from './features/schedule/ScheduleFormV2';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const queryClient = new QueryClient({
@@ -39,6 +40,7 @@ function App() {
             <Route path="expenses/:id/edit" element={<ExpenseForm />} />
             <Route path="schedule" element={<ScheduleList />} />
             <Route path="schedule/new" element={<ScheduleForm />} />
+            <Route path="schedule/new-v2" element={<ScheduleFormV2 />} />
             <Route path="schedule/:id/edit" element={<ScheduleForm />} />
           </Route>
         </Routes>
