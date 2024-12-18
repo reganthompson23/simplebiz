@@ -34,13 +34,20 @@ export default function ExpenseForm() {
     queryFn: async () => {
       if (!expenseId) return null;
 
+      console.log('Fetching expense with ID:', expenseId); // Debug log
+
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
         .eq('id', expenseId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching expense:', error); // Debug log
+        throw error;
+      }
+
+      console.log('Fetched expense data:', data); // Debug log
       return data as Expense;
     },
     enabled: !!expenseId
@@ -86,11 +93,12 @@ export default function ExpenseForm() {
   // Set form data when existing expense is loaded
   useEffect(() => {
     if (existingExpense) {
+      console.log('Setting form data from existing expense:', existingExpense); // Debug log
       setValue('amount', existingExpense.amount);
       setValue('category', existingExpense.category);
-      setCategoryInput(existingExpense.category);
-      setValue('description', existingExpense.description);
+      setValue('description', existingExpense.description || '');
       setValue('date', existingExpense.date);
+      setCategoryInput(existingExpense.category);
     }
   }, [existingExpense, setValue]);
 
