@@ -9,7 +9,8 @@ import CreateInvoice from './features/invoicing/CreateInvoice';
 import LeadsList from './features/crm/LeadsList';
 import ExpenseList from './features/expenses/ExpenseList';
 import ExpenseForm from './features/expenses/ExpenseForm';
-import ScheduleView from './features/schedule/ScheduleView';
+import ScheduleList from './features/schedule/ScheduleList';
+import ScheduleForm from './features/schedule/ScheduleForm';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const queryClient = new QueryClient({
@@ -36,7 +37,9 @@ function App() {
             <Route path="expenses" element={<ExpenseList />} />
             <Route path="expenses/new" element={<ExpenseForm />} />
             <Route path="expenses/:id/edit" element={<ExpenseForm />} />
-            <Route path="schedule" element={<ScheduleView />} />
+            <Route path="schedule" element={<ScheduleList />} />
+            <Route path="schedule/new" element={<ScheduleForm />} />
+            <Route path="schedule/:id/edit" element={<ScheduleForm />} />
           </Route>
         </Routes>
       </Router>
