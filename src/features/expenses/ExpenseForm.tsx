@@ -261,6 +261,7 @@ export default function ExpenseForm() {
           <div className="mt-1 relative">
             <Input
               type="text"
+              {...register('category', { required: 'Category is required' })}
               value={categoryInput}
               onChange={(e) => {
                 setCategoryInput(e.target.value);
@@ -271,7 +272,6 @@ export default function ExpenseForm() {
               className="block w-full"
               placeholder="e.g., Fuel, Tools, Supplies"
             />
-            <input type="hidden" {...register('category', { required: 'Category is required' })} />
             
             {showCategorySuggestions && filteredCategories.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm">
