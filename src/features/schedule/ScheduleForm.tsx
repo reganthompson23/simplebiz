@@ -108,7 +108,14 @@ export default function ScheduleForm() {
         <h1 className="text-2xl font-bold text-gray-900">New Appointment</h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form 
+        onSubmit={(e) => {
+          console.log('Form submitted!');
+          console.log('Form values:', e.target);
+          handleSubmit(onSubmit)(e);
+        }} 
+        className="space-y-6"
+      >
         <div>
           <label className="block text-sm font-medium text-gray-700">Customer Name</label>
           <div className="mt-1">
