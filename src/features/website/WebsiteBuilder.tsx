@@ -215,7 +215,8 @@ export default function WebsiteBuilder() {
     onChange, 
     onSave,
     type = 'text',
-    component: Component = Input
+    component: Component = Input,
+    allowUpload = false
   }: { 
     label: string;
     value: string;
@@ -224,9 +225,12 @@ export default function WebsiteBuilder() {
     onSave: () => Promise<void>;
     type?: string;
     component?: typeof Input | typeof Textarea;
+    allowUpload?: boolean;
   }) => {
     const [isEditing, setIsEditing] = React.useState(false);
     const [editValue, setEditValue] = React.useState(value);
+    const [isUploading, setIsUploading] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Update edit value when prop value changes
     React.useEffect(() => {
@@ -249,6 +253,57 @@ export default function WebsiteBuilder() {
       }
     };
 
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        setIsUploading(true);
+
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `website-images/${fileName}`;
+
+        const { data, error } = await supabase.storage
+          .from('public')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) throw error;
+
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('public')
+          .getPublicUrl(filePath);
+
+        // Update the field value
+        setEditValue(publicUrl);
+        onChange(publicUrl);
+        await handleSaveField(path, publicUrl);
+
+        toast({
+          title: 'Success',
+          description: 'Image uploaded successfully',
+          type: 'success',
+        });
+      } catch (error) {
+        console.error('Upload failed:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to upload image',
+          type: 'error',
+        });
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+
     return (
       <div>
         <label className="block text-sm font-medium mb-2">
@@ -262,6 +317,26 @@ export default function WebsiteBuilder() {
             disabled={!isEditing}
             className="flex-1"
           />
+          {allowUpload && (
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="px-3"
+              >
+                {isUploading ? 'Uploading...' : 'Upload'}
+              </Button>
+            </>
+          )}
           {!isEditing ? (
             <Button
               type="button"
@@ -428,6 +503,7 @@ export default function WebsiteBuilder() {
                       onChange={(value) => handleFieldChange(['theme', 'topImage'], value)}
                       onSave={() => handleSaveField(['theme', 'topImage'], editingContent.theme.topImage)}
                       type="url"
+                      allowUpload
                     />
 
                     <div className="space-y-4">
