@@ -45,24 +45,57 @@ export default function ScheduleForm() {
       return;
     }
 
+    // Validate required fields
+    if (!data.customer_name || !data.description || !data.start_date || !data.start_time || !data.end_time) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        type: 'error',
+      });
+      return;
+    }
+
     try {
+      console.log('Form data:', data);
+
       // Format the date and time strings properly
       const formatTimeString = (timeStr: string) => {
-        // Ensure the time string has seconds
-        return timeStr.includes(':') ? 
-          timeStr.split(':').length === 2 ? `${timeStr}:00` : timeStr 
-          : `${timeStr}:00:00`;
+        if (!timeStr) return null;
+        console.log('Formatting time:', timeStr);
+        // Handle 24-hour format from the time input
+        const [hours, minutes] = timeStr.split(':');
+        if (!hours || !minutes) return null;
+        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
       };
 
       const startTime = formatTimeString(data.start_time);
       const endTime = formatTimeString(data.end_time);
 
-      // Create ISO strings with the formatted time
-      const startDateTime = new Date(`${data.start_date}T${startTime}`);
-      const endDateTime = new Date(`${data.start_date}T${endTime}`);
+      if (!startTime || !endTime) {
+        toast({
+          title: 'Validation Error',
+          description: 'Invalid time format',
+          type: 'error',
+        });
+        return;
+      }
+
+      console.log('Formatted times:', { startTime, endTime });
+
+      // Create date strings in ISO format
+      const startDateTimeStr = `${data.start_date}T${startTime}`;
+      const endDateTimeStr = `${data.start_date}T${endTime}`;
+
+      console.log('DateTime strings:', { startDateTimeStr, endDateTimeStr });
+
+      const startDateTime = new Date(startDateTimeStr);
+      const endDateTime = new Date(endDateTimeStr);
+
+      console.log('Parsed dates:', { startDateTime, endDateTime });
 
       // Validate that the dates are valid
       if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        console.error('Invalid date/time:', { startDateTime, endDateTime });
         toast({
           title: 'Validation Error',
           description: 'Invalid date or time format',
@@ -86,8 +119,10 @@ export default function ScheduleForm() {
         description: data.description,
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
-        location: data.location
+        location: data.location || null
       };
+
+      console.log('Schedule content:', scheduleContent);
 
       const { error } = await supabase
         .from('schedule')
@@ -137,12 +172,12 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="text"
-              {...register('customer_name')}
+              {...register('customer_name', { required: true })}
               className="block w-full"
               placeholder="Enter customer name"
             />
             {errors.customer_name && (
-              <p className="mt-1 text-sm text-red-600">{errors.customer_name.message}</p>
+              <p className="mt-1 text-sm text-red-600">Customer name is required</p>
             )}
           </div>
         </div>
@@ -152,12 +187,12 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="text"
-              {...register('description')}
+              {...register('description', { required: true })}
               className="block w-full"
               placeholder="Enter appointment description"
             />
             {errors.description && (
-              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+              <p className="mt-1 text-sm text-red-600">Description is required</p>
             )}
           </div>
         </div>
@@ -167,12 +202,12 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="date"
-              {...register('start_date')}
+              {...register('start_date', { required: true })}
               className="block w-full"
               min={today}
             />
             {errors.start_date && (
-              <p className="mt-1 text-sm text-red-600">{errors.start_date.message}</p>
+              <p className="mt-1 text-sm text-red-600">Date is required</p>
             )}
           </div>
         </div>
@@ -183,11 +218,11 @@ export default function ScheduleForm() {
             <div className="mt-1">
               <Input
                 type="time"
-                {...register('start_time')}
+                {...register('start_time', { required: true })}
                 className="block w-full"
               />
               {errors.start_time && (
-                <p className="mt-1 text-sm text-red-600">{errors.start_time.message}</p>
+                <p className="mt-1 text-sm text-red-600">Start time is required</p>
               )}
             </div>
           </div>
@@ -197,11 +232,11 @@ export default function ScheduleForm() {
             <div className="mt-1">
               <Input
                 type="time"
-                {...register('end_time')}
+                {...register('end_time', { required: true })}
                 className="block w-full"
               />
               {errors.end_time && (
-                <p className="mt-1 text-sm text-red-600">{errors.end_time.message}</p>
+                <p className="mt-1 text-sm text-red-600">End time is required</p>
               )}
             </div>
           </div>
