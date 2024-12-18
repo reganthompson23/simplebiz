@@ -64,7 +64,7 @@ export default function ExpenseForm() {
     enabled: !!user?.id
   });
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ExpenseFormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ExpenseFormData>({
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
       amount: undefined,
@@ -285,7 +285,6 @@ export default function ExpenseForm() {
           <div className="mt-1">
             <Input
               type="date"
-              defaultValue={new Date().toISOString().split('T')[0]}
               {...register('date', { required: 'Date is required' })}
               className="block w-full"
             />
