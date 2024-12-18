@@ -320,10 +320,16 @@ export default function ExpenseForm() {
           <div className="mt-1">
             <Input
               type="text"
-              {...register('description')}
+              {...register('description', { required: 'Description is required' })}
+              onChange={(e) => {
+                setValue('description', e.target.value);
+              }}
               className="block w-full"
-              placeholder="Optional description"
+              placeholder="Enter expense description"
             />
+            {errors.description && (
+              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+            )}
           </div>
         </div>
 
