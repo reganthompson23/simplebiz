@@ -332,7 +332,10 @@ export default function ExpenseForm() {
           >
             Cancel
           </Button>
-          <Button type="submit">
+          <Button
+            type="submit"
+            variant="primary"
+          >
             {expenseId ? 'Update Expense' : 'Create Expense'}
           </Button>
         </div>
