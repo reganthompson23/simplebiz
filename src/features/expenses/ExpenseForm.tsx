@@ -223,10 +223,15 @@ export default function ExpenseForm() {
       </div>
 
       <form 
-        onSubmit={handleSubmit((data) => {
-          console.log('Form submitted, calling onSubmit with:', data); // Debug log
-          onSubmit(data);
-        })} 
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log('Form submit event triggered'); // Debug log for form submission event
+          handleSubmit((data) => {
+            console.log('HandleSubmit callback triggered'); // Debug log for handleSubmit
+            console.log('Form data:', data); // Debug log for form data
+            onSubmit(data);
+          })(e);
+        }} 
         className="space-y-6"
       >
         <div>
@@ -237,20 +242,18 @@ export default function ExpenseForm() {
               {...register('amount', { 
                 required: 'Amount is required',
                 validate: value => {
-                  // Remove any non-numeric characters except decimal point
-                  const cleanValue = value.replace(/[^0-9.]/g, '');
+                  console.log('Validating amount:', value); // Debug log for amount validation
+                  const cleanValue = value?.toString().replace(/[^0-9.]/g, '') || '';
                   const num = parseFloat(cleanValue);
                   return !isNaN(num) && num > 0 || 'Amount must be greater than 0';
                 }
               })}
               className="block w-full"
               placeholder="0.00"
-              // Format the input as the user types
               onChange={(e) => {
+                console.log('Amount changed:', e.target.value); // Debug log for amount changes
                 let value = e.target.value;
-                // Remove any non-numeric characters except decimal point
                 value = value.replace(/[^0-9.]/g, '');
-                // Ensure only one decimal point
                 const parts = value.split('.');
                 if (parts.length > 2) {
                   value = parts[0] + '.' + parts.slice(1).join('');
@@ -342,6 +345,7 @@ export default function ExpenseForm() {
           <Button
             type="submit"
             variant="primary"
+            onClick={() => console.log('Submit button clicked')}
           >
             {expenseId ? 'Update Expense' : 'Create Expense'}
           </Button>
