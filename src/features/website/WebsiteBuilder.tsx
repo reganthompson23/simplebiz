@@ -505,6 +505,18 @@ export default function WebsiteBuilder() {
                       type="url"
                       allowUpload
                     />
+                    <p className="text-sm text-gray-500 mt-2">
+                      Browse professional royalty free images in{' '}
+                      <a 
+                        href="https://unsplash.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline"
+                      >
+                        Unsplash
+                      </a>
+                      {' '}to find the perfect hero image for your business. Right click and copy image address from any image on the internet and paste it in the line above to display it as your hero image on your website.
+                    </p>
 
                     <div className="space-y-4">
                       <label className="block text-sm font-medium mb-2">
