@@ -37,8 +37,8 @@ export default function ScheduleForm() {
     try {
       if (!user?.id) return navigate('/login');
 
-      const startDateTime = new Date(`${data.start_date}T${data.start_time}`);
-      const endDateTime = new Date(`${data.start_date}T${data.end_time}`);
+      const startDateTime = new Date(`${data.start_date}T${data.start_time}:00`);
+      const endDateTime = new Date(`${data.start_date}T${data.end_time}:00`);
 
       const scheduleContent: ScheduleContent = {
         customer_name: data.customer_name,
