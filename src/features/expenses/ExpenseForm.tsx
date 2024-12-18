@@ -113,6 +113,9 @@ export default function ExpenseForm() {
       // Round to 2 decimal places
       const finalAmount = Math.round(formattedAmount * 100) / 100;
 
+      // Ensure we have a valid date (use today if somehow the date is missing)
+      const expenseDate = data.date || today;
+
       if (expenseId) {
         // Update existing expense
         const { error } = await supabase
@@ -121,7 +124,7 @@ export default function ExpenseForm() {
             amount: finalAmount,
             category: data.category,
             description: data.description,
-            date: data.date,
+            date: expenseDate,
             updated_at: new Date().toISOString()
           })
           .eq('id', expenseId)
@@ -143,7 +146,7 @@ export default function ExpenseForm() {
             amount: finalAmount,
             category: data.category,
             description: data.description,
-            date: data.date
+            date: expenseDate
           });
 
         if (error) throw error;
@@ -286,8 +289,11 @@ export default function ExpenseForm() {
           <div className="mt-1">
             <Input
               type="date"
+              {...register('date', {
+                required: true,
+                value: today // Ensure we always have a value
+              })}
               defaultValue={today}
-              {...register('date')}
               className="block w-full"
             />
           </div>
