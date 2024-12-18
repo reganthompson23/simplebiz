@@ -74,13 +74,18 @@ export interface Expense {
   createdAt: string;
 }
 
+export interface ScheduleContent {
+  customer_name: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  location?: string;
+}
+
 export interface ScheduleEntry {
   id: string;
-  userId: string;
-  customerName: string;
-  description: string;
-  date: string;
-  time: string;
-  location?: string;
-  createdAt: string;
+  profile_id: string;
+  content: ScheduleContent;
+  created_at: string;
+  updated_at: string;
 }
