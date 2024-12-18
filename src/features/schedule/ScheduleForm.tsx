@@ -25,12 +25,13 @@ export default function ScheduleForm() {
   const { user } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ScheduleFormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ScheduleFormData>({
     defaultValues: {
       start_date: today,
       start_time: '09:00',
       end_time: '10:00'
-    }
+    },
+    mode: 'onTouched'
   });
 
   const onSubmit = async (data: ScheduleFormData) => {
@@ -114,7 +115,7 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="text"
-              {...register('customer_name', { required: 'Customer name is required' })}
+              {...register('customer_name')}
               className="block w-full"
               placeholder="Enter customer name"
             />
@@ -129,7 +130,7 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="text"
-              {...register('description', { required: 'Description is required' })}
+              {...register('description')}
               className="block w-full"
               placeholder="Enter appointment description"
             />
@@ -144,7 +145,7 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               type="date"
-              {...register('start_date', { required: 'Date is required' })}
+              {...register('start_date')}
               className="block w-full"
               min={today}
             />
@@ -160,7 +161,7 @@ export default function ScheduleForm() {
             <div className="mt-1">
               <Input
                 type="time"
-                {...register('start_time', { required: 'Start time is required' })}
+                {...register('start_time')}
                 className="block w-full"
               />
               {errors.start_time && (
@@ -174,7 +175,7 @@ export default function ScheduleForm() {
             <div className="mt-1">
               <Input
                 type="time"
-                {...register('end_time', { required: 'End time is required' })}
+                {...register('end_time')}
                 className="block w-full"
               />
               {errors.end_time && (
@@ -207,6 +208,7 @@ export default function ScheduleForm() {
           <Button
             type="submit"
             variant="primary"
+            disabled={isSubmitting}
           >
             Create Appointment
           </Button>
