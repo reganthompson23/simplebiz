@@ -109,14 +109,10 @@ export default function ScheduleForm() {
       </div>
 
       <form 
-        onSubmit={(e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target as HTMLFormElement);
-          const data = Object.fromEntries(formData.entries());
-          console.log('Raw form data:', data);
-          
-          handleSubmit(onSubmit)(e);
-        }} 
+        onSubmit={handleSubmit((data) => {
+          console.log('Form submitted with data:', data);
+          onSubmit(data);
+        })} 
         className="space-y-6"
       >
         <div>
