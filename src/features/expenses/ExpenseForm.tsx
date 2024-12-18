@@ -70,7 +70,8 @@ export default function ExpenseForm() {
       amount: undefined,
       category: '',
       description: ''
-    }
+    },
+    mode: 'onSubmit'
   });
 
   // Set form data when existing expense is loaded
@@ -95,12 +96,23 @@ export default function ExpenseForm() {
     }
 
     try {
+      // Format the amount properly
+      const formattedAmount = parseFloat(data.amount.toString());
+      if (isNaN(formattedAmount)) {
+        toast({
+          title: 'Error',
+          description: 'Please enter a valid amount',
+          type: 'error',
+        });
+        return;
+      }
+
       if (expenseId) {
         // Update existing expense
         const { error } = await supabase
           .from('expenses')
           .update({
-            amount: data.amount,
+            amount: formattedAmount,
             category: data.category,
             description: data.description,
             date: data.date,
@@ -122,7 +134,7 @@ export default function ExpenseForm() {
           .from('expenses')
           .insert({
             profile_id: user.id,
-            amount: data.amount,
+            amount: formattedAmount,
             category: data.category,
             description: data.description,
             date: data.date
@@ -183,10 +195,9 @@ export default function ExpenseForm() {
               step="any"
               {...register('amount', { 
                 required: 'Amount is required',
-                min: { value: 0.01, message: 'Amount must be greater than 0' },
-                setValueAs: (value) => {
+                validate: value => {
                   const num = parseFloat(value);
-                  return isNaN(num) ? undefined : Number(num.toFixed(2));
+                  return !isNaN(num) && num > 0 || 'Amount must be greater than 0';
                 }
               })}
               className="block w-full"
