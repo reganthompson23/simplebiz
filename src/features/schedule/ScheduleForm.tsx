@@ -3,24 +3,34 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { supabase } from '../../lib/supabase';
-import { Schedule, ScheduleFormData } from '../../types';
+import { Schedule } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { toast } from '../../components/ui/Toast';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
+interface ScheduleFormData {
+  customer_name: string;
+  customer_address: string;
+  customer_phone: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  job_description: string;
+}
+
 export default function ScheduleForm() {
   const navigate = useNavigate();
   const { id: scheduleId } = useParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const today = new Date().toISOString().split('T')[0];
 
   const { data: existingSchedule, isLoading } = useQuery({
     queryKey: ['schedule', scheduleId],
     queryFn: async () => {
       if (!scheduleId) return null;
-
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
@@ -33,25 +43,30 @@ export default function ScheduleForm() {
     enabled: !!scheduleId
   });
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ScheduleFormData>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ScheduleFormData>({
     defaultValues: {
       customer_name: '',
       customer_address: '',
       customer_phone: '',
-      start_time: new Date().toISOString().slice(0, 16),
-      end_time: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
+      date: today,
+      start_time: '09:00',
+      end_time: '10:00',
       job_description: ''
-    }
+    },
+    mode: 'onSubmit'
   });
 
-  // Set form data when existing schedule is loaded
   useEffect(() => {
     if (existingSchedule) {
+      const startDate = new Date(existingSchedule.start_time);
+      const endDate = new Date(existingSchedule.end_time);
+      
       setValue('customer_name', existingSchedule.customer_name);
       setValue('customer_address', existingSchedule.customer_address);
       setValue('customer_phone', existingSchedule.customer_phone);
-      setValue('start_time', new Date(existingSchedule.start_time).toISOString().slice(0, 16));
-      setValue('end_time', new Date(existingSchedule.end_time).toISOString().slice(0, 16));
+      setValue('date', startDate.toISOString().split('T')[0]);
+      setValue('start_time', startDate.toTimeString().slice(0, 5));
+      setValue('end_time', endDate.toTimeString().slice(0, 5));
       setValue('job_description', existingSchedule.job_description);
     }
   }, [existingSchedule, setValue]);
@@ -68,17 +83,17 @@ export default function ScheduleForm() {
     }
 
     try {
-      // Convert datetime strings to ISO format
-      const startTime = new Date(data.start_time).toISOString();
-      const endTime = new Date(data.end_time).toISOString();
+      // Combine date and time
+      const startDateTime = new Date(`${data.date}T${data.start_time}`);
+      const endDateTime = new Date(`${data.date}T${data.end_time}`);
 
       const scheduleData = {
         profile_id: user.id,
         customer_name: data.customer_name.trim(),
         customer_address: data.customer_address.trim(),
         customer_phone: data.customer_phone.trim(),
-        start_time: startTime,
-        end_time: endTime,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
         job_description: data.job_description.trim()
       };
 
@@ -183,7 +198,10 @@ export default function ScheduleForm() {
             <Input
               {...register('customer_phone', { 
                 required: 'Customer phone is required',
-                minLength: { value: 8, message: 'Phone number must be at least 8 characters' }
+                pattern: { 
+                  value: /^[0-9+\s()-]{8,}$/,
+                  message: 'Please enter a valid phone number'
+                }
               })}
               type="tel"
               className={errors.customer_phone ? 'border-red-500' : ''}
@@ -194,13 +212,28 @@ export default function ScheduleForm() {
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Date</label>
+          <div className="mt-1">
+            <Input
+              {...register('date', { required: 'Date is required' })}
+              type="date"
+              min={today}
+              className={errors.date ? 'border-red-500' : ''}
+            />
+            {errors.date && (
+              <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Start Time</label>
             <div className="mt-1">
               <Input
                 {...register('start_time', { required: 'Start time is required' })}
-                type="datetime-local"
+                type="time"
                 className={errors.start_time ? 'border-red-500' : ''}
               />
               {errors.start_time && (
@@ -214,7 +247,7 @@ export default function ScheduleForm() {
             <div className="mt-1">
               <Input
                 {...register('end_time', { required: 'End time is required' })}
-                type="datetime-local"
+                type="time"
                 className={errors.end_time ? 'border-red-500' : ''}
               />
               {errors.end_time && (
@@ -233,9 +266,9 @@ export default function ScheduleForm() {
                 minLength: { value: 10, message: 'Description must be at least 10 characters' }
               })}
               rows={4}
-              className={`shadow-sm block w-full sm:text-sm border-gray-300 rounded-md ${
-                errors.job_description ? 'border-red-500' : ''
-              }`}
+              className={`block w-full rounded-md border ${
+                errors.job_description ? 'border-red-500' : 'border-gray-300'
+              } shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm`}
             />
             {errors.job_description && (
               <p className="mt-1 text-sm text-red-600">{errors.job_description.message}</p>
@@ -243,12 +276,11 @@ export default function ScheduleForm() {
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end space-x-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => navigate('/schedule')}
-            className="mr-4"
           >
             Cancel
           </Button>
