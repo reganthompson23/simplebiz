@@ -14,7 +14,6 @@ interface ScheduleFormData {
   customer_name: string;
   customer_address: string;
   customer_phone: string;
-  date: string;
   start_time: string;
   end_time: string;
   job_description: string;
@@ -25,7 +24,6 @@ export default function ScheduleForm() {
   const { id: scheduleId } = useParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const today = new Date().toISOString().split('T')[0];
 
   const { data: existingSchedule, isLoading } = useQuery({
     queryKey: ['schedule', scheduleId],
@@ -43,35 +41,37 @@ export default function ScheduleForm() {
     enabled: !!scheduleId
   });
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ScheduleFormData>({
+  const { register, handleSubmit, setValue, formState: { errors }, getValues } = useForm<ScheduleFormData>({
     defaultValues: {
       customer_name: '',
       customer_address: '',
       customer_phone: '',
-      date: today,
-      start_time: '09:00',
-      end_time: '10:00',
+      start_time: '',
+      end_time: '',
       job_description: ''
     },
     mode: 'onSubmit'
   });
 
   useEffect(() => {
+    console.log('Form Errors:', errors);
+    console.log('Current Form Values:', getValues());
+  }, [errors, getValues]);
+
+  useEffect(() => {
     if (existingSchedule) {
-      const startDate = new Date(existingSchedule.start_time);
-      const endDate = new Date(existingSchedule.end_time);
-      
       setValue('customer_name', existingSchedule.customer_name);
       setValue('customer_address', existingSchedule.customer_address);
       setValue('customer_phone', existingSchedule.customer_phone);
-      setValue('date', startDate.toISOString().split('T')[0]);
-      setValue('start_time', startDate.toTimeString().slice(0, 5));
-      setValue('end_time', endDate.toTimeString().slice(0, 5));
+      setValue('start_time', existingSchedule.start_time);
+      setValue('end_time', existingSchedule.end_time);
       setValue('job_description', existingSchedule.job_description);
     }
   }, [existingSchedule, setValue]);
 
   const onSubmit = async (data: ScheduleFormData) => {
+    console.log('Form submitted with data:', data);
+    
     if (!user?.id) {
       toast({
         title: 'Authentication Error',
@@ -83,19 +83,17 @@ export default function ScheduleForm() {
     }
 
     try {
-      // Combine date and time
-      const startDateTime = new Date(`${data.date}T${data.start_time}`);
-      const endDateTime = new Date(`${data.date}T${data.end_time}`);
-
       const scheduleData = {
         profile_id: user.id,
         customer_name: data.customer_name.trim(),
         customer_address: data.customer_address.trim(),
         customer_phone: data.customer_phone.trim(),
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
+        start_time: new Date(data.start_time).toISOString(),
+        end_time: new Date(data.end_time).toISOString(),
         job_description: data.job_description.trim()
       };
+      
+      console.log('Submitting schedule data:', scheduleData);
 
       if (scheduleId) {
         const { error } = await supabase
@@ -163,11 +161,11 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               {...register('customer_name', { 
-                required: 'Customer name is required',
-                minLength: { value: 2, message: 'Name must be at least 2 characters' }
+                required: { value: true, message: 'Customer name is required' }
               })}
               type="text"
               className={errors.customer_name ? 'border-red-500' : ''}
+              onChange={(e) => console.log('Customer name changed:', e.target.value)}
             />
             {errors.customer_name && (
               <p className="mt-1 text-sm text-red-600">{errors.customer_name.message}</p>
@@ -180,11 +178,11 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               {...register('customer_address', { 
-                required: 'Customer address is required',
-                minLength: { value: 5, message: 'Address must be at least 5 characters' }
+                required: { value: true, message: 'Customer address is required' }
               })}
               type="text"
               className={errors.customer_address ? 'border-red-500' : ''}
+              onChange={(e) => console.log('Customer address changed:', e.target.value)}
             />
             {errors.customer_address && (
               <p className="mt-1 text-sm text-red-600">{errors.customer_address.message}</p>
@@ -197,32 +195,14 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <Input
               {...register('customer_phone', { 
-                required: 'Customer phone is required',
-                pattern: { 
-                  value: /^[0-9+\s()-]{8,}$/,
-                  message: 'Please enter a valid phone number'
-                }
+                required: { value: true, message: 'Customer phone is required' }
               })}
               type="tel"
               className={errors.customer_phone ? 'border-red-500' : ''}
+              onChange={(e) => console.log('Customer phone changed:', e.target.value)}
             />
             {errors.customer_phone && (
               <p className="mt-1 text-sm text-red-600">{errors.customer_phone.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Date</label>
-          <div className="mt-1">
-            <Input
-              {...register('date', { required: 'Date is required' })}
-              type="date"
-              min={today}
-              className={errors.date ? 'border-red-500' : ''}
-            />
-            {errors.date && (
-              <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
             )}
           </div>
         </div>
@@ -232,9 +212,12 @@ export default function ScheduleForm() {
             <label className="block text-sm font-medium text-gray-700">Start Time</label>
             <div className="mt-1">
               <Input
-                {...register('start_time', { required: 'Start time is required' })}
-                type="time"
+                {...register('start_time', { 
+                  required: { value: true, message: 'Start time is required' }
+                })}
+                type="datetime-local"
                 className={errors.start_time ? 'border-red-500' : ''}
+                onChange={(e) => console.log('Start time changed:', e.target.value)}
               />
               {errors.start_time && (
                 <p className="mt-1 text-sm text-red-600">{errors.start_time.message}</p>
@@ -246,9 +229,12 @@ export default function ScheduleForm() {
             <label className="block text-sm font-medium text-gray-700">End Time</label>
             <div className="mt-1">
               <Input
-                {...register('end_time', { required: 'End time is required' })}
-                type="time"
+                {...register('end_time', { 
+                  required: { value: true, message: 'End time is required' }
+                })}
+                type="datetime-local"
                 className={errors.end_time ? 'border-red-500' : ''}
+                onChange={(e) => console.log('End time changed:', e.target.value)}
               />
               {errors.end_time && (
                 <p className="mt-1 text-sm text-red-600">{errors.end_time.message}</p>
@@ -262,13 +248,13 @@ export default function ScheduleForm() {
           <div className="mt-1">
             <textarea
               {...register('job_description', { 
-                required: 'Job description is required',
-                minLength: { value: 10, message: 'Description must be at least 10 characters' }
+                required: { value: true, message: 'Job description is required' }
               })}
               rows={4}
               className={`block w-full rounded-md border ${
                 errors.job_description ? 'border-red-500' : 'border-gray-300'
               } shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm`}
+              onChange={(e) => console.log('Job description changed:', e.target.value)}
             />
             {errors.job_description && (
               <p className="mt-1 text-sm text-red-600">{errors.job_description.message}</p>
