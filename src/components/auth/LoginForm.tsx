@@ -27,6 +27,7 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
     setIsProcessing(true);
+    console.log('Attempting login with:', { email: data.email });
     
     try {
       if (isSignUp) {
@@ -65,15 +66,22 @@ export default function LoginForm() {
         }
       } else {
         // Sign in flow
+        console.log('Starting sign in...');
         const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         });
 
+        console.log('Sign in response:', { error: signInError, data: signInData });
+
         if (signInError) throw signInError;
 
         // Wait for session to be established
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log('Session data:', sessionData);
+
         if (signInData.session) {
+          console.log('Login successful, navigating to /');
           navigate('/');
         }
       }
