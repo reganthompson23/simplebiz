@@ -10,5 +10,6 @@ export const supabaseConfig = {
     leads: 'leads',
     invoices: 'invoices',
     expenses: 'expenses',
+    schedules: 'schedules',
   },
 };

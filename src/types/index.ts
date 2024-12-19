@@ -73,3 +73,25 @@ export interface Expense {
   date: string;
   createdAt: string;
 }
+
+export interface Schedule {
+  id: string;
+  profile_id: string;
+  customer_name: string;
+  customer_address: string;
+  customer_phone: string;
+  start_time: string;
+  end_time: string;
+  job_description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduleFormData {
+  customer_name: string;
+  customer_address: string;
+  customer_phone: string;
+  start_time: string;
+  end_time: string;
+  job_description: string;
+}
