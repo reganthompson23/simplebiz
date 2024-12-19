@@ -40,7 +40,7 @@ function App() {
             <Route path="expenses/:id/edit" element={<ExpenseForm />} />
             <Route path="schedule" element={<ScheduleListV2 />} />
             <Route path="schedule/new-v2" element={<ScheduleFormV2 />} />
-            <Route path="schedule/:id/edit" element={<ScheduleForm />} />
+            <Route path="schedule/edit/:id" element={<ScheduleForm />} />
           </Route>
         </Routes>
       </Router>
