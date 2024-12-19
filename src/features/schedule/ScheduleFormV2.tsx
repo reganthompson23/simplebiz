@@ -172,7 +172,7 @@ export default function ScheduleFormV2() {
             Cancel
           </Button>
           <Button type="submit" variant="primary">
-            Create Appointment
+            Schedule Appointment
           </Button>
         </div>
       </form>
