@@ -8,6 +8,7 @@ import {
   FileText,
   DollarSign,
   LogOut,
+  Calendar,
 } from 'lucide-react';
 
 export default function Layout() {
@@ -24,6 +25,7 @@ export default function Layout() {
     { name: 'Inquiries', href: '/inquiries', icon: Users },
     { name: 'Invoices', href: '/invoices', icon: FileText },
     { name: 'Expenses', href: '/expenses', icon: DollarSign },
+    { name: 'Schedule', href: '/schedule', icon: Calendar },
   ];
 
   return (
