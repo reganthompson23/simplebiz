@@ -16,7 +16,6 @@ export default function ScheduleForm() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Fetch existing schedule if editing
   const { data: existingSchedule, isLoading } = useQuery({
     queryKey: ['schedule', scheduleId],
     queryFn: async () => {
@@ -34,7 +33,7 @@ export default function ScheduleForm() {
     enabled: !!scheduleId
   });
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ScheduleFormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ScheduleFormData>({
     defaultValues: {
       customer_name: '',
       customer_address: '',
@@ -69,13 +68,21 @@ export default function ScheduleForm() {
     }
 
     try {
+      // Convert datetime strings to ISO format
+      const startTime = new Date(data.start_time).toISOString();
+      const endTime = new Date(data.end_time).toISOString();
+
       const scheduleData = {
         profile_id: user.id,
-        ...data
+        customer_name: data.customer_name.trim(),
+        customer_address: data.customer_address.trim(),
+        customer_phone: data.customer_phone.trim(),
+        start_time: startTime,
+        end_time: endTime,
+        job_description: data.job_description.trim()
       };
 
       if (scheduleId) {
-        // Update existing schedule
         const { error } = await supabase
           .from('schedules')
           .update(scheduleData)
@@ -90,7 +97,6 @@ export default function ScheduleForm() {
           type: 'success',
         });
       } else {
-        // Create new schedule
         const { error } = await supabase
           .from('schedules')
           .insert(scheduleData);
@@ -104,10 +110,10 @@ export default function ScheduleForm() {
         });
       }
 
-      // Invalidate queries and navigate back
       await queryClient.invalidateQueries({ queryKey: ['schedules'] });
       navigate('/schedule');
     } catch (error: any) {
+      console.error('Form submission error:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to save schedule',
@@ -141,7 +147,10 @@ export default function ScheduleForm() {
           <label className="block text-sm font-medium text-gray-700">Customer Name</label>
           <div className="mt-1">
             <Input
-              {...register('customer_name', { required: 'Customer name is required' })}
+              {...register('customer_name', { 
+                required: 'Customer name is required',
+                minLength: { value: 2, message: 'Name must be at least 2 characters' }
+              })}
               type="text"
               className={errors.customer_name ? 'border-red-500' : ''}
             />
@@ -155,7 +164,10 @@ export default function ScheduleForm() {
           <label className="block text-sm font-medium text-gray-700">Customer Address</label>
           <div className="mt-1">
             <Input
-              {...register('customer_address', { required: 'Customer address is required' })}
+              {...register('customer_address', { 
+                required: 'Customer address is required',
+                minLength: { value: 5, message: 'Address must be at least 5 characters' }
+              })}
               type="text"
               className={errors.customer_address ? 'border-red-500' : ''}
             />
@@ -169,7 +181,10 @@ export default function ScheduleForm() {
           <label className="block text-sm font-medium text-gray-700">Customer Phone</label>
           <div className="mt-1">
             <Input
-              {...register('customer_phone', { required: 'Customer phone is required' })}
+              {...register('customer_phone', { 
+                required: 'Customer phone is required',
+                minLength: { value: 8, message: 'Phone number must be at least 8 characters' }
+              })}
               type="tel"
               className={errors.customer_phone ? 'border-red-500' : ''}
             />
@@ -213,7 +228,10 @@ export default function ScheduleForm() {
           <label className="block text-sm font-medium text-gray-700">Job Description</label>
           <div className="mt-1">
             <textarea
-              {...register('job_description', { required: 'Job description is required' })}
+              {...register('job_description', { 
+                required: 'Job description is required',
+                minLength: { value: 10, message: 'Description must be at least 10 characters' }
+              })}
               rows={4}
               className={`shadow-sm block w-full sm:text-sm border-gray-300 rounded-md ${
                 errors.job_description ? 'border-red-500' : ''
