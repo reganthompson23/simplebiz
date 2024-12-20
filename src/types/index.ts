@@ -80,6 +80,7 @@ export interface Schedule {
   customer_name: string;
   customer_address: string;
   customer_phone: string;
+  schedule_date: string;
   start_time: string;
   end_time: string;
   job_description: string;

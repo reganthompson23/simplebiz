@@ -16,7 +16,8 @@ export default function ScheduleList() {
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
-        .order('schedule_date', { ascending: true });
+        .order('schedule_date', { ascending: true })
+        .order('start_time', { ascending: true });
       
       if (error) throw error;
       return data as Schedule[];
