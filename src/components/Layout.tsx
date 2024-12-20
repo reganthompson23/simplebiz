@@ -21,11 +21,11 @@ export default function Layout() {
   };
 
   const navigation = [
-    { name: 'Website', href: '/website', icon: LayoutGrid },
-    { name: 'Inquiries', href: '/inquiries', icon: Users },
-    { name: 'Invoices', href: '/invoices', icon: FileText },
-    { name: 'Expenses', href: '/expenses', icon: DollarSign },
-    { name: 'Schedule', href: '/schedule', icon: Calendar },
+    { name: 'Website', href: '/dashboard/website', icon: LayoutGrid },
+    { name: 'Inquiries', href: '/dashboard/inquiries', icon: Users },
+    { name: 'Invoices', href: '/dashboard/invoices', icon: FileText },
+    { name: 'Expenses', href: '/dashboard/expenses', icon: DollarSign },
+    { name: 'Schedule', href: '/dashboard/schedule', icon: Calendar },
   ];
 
   return (
