@@ -9,6 +9,8 @@ import CreateInvoice from './features/invoicing/CreateInvoice';
 import LeadsList from './features/crm/LeadsList';
 import ExpenseList from './features/expenses/ExpenseList';
 import ExpenseForm from './features/expenses/ExpenseForm';
+import Expenses2List from './features/expenses2/Expenses2List';
+import Expenses2Form from './features/expenses2/Expenses2Form';
 import ScheduleList from './features/schedule/ScheduleList';
 import ScheduleForm from './features/schedule/ScheduleForm';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -37,6 +39,9 @@ function App() {
             <Route path="expenses" element={<ExpenseList />} />
             <Route path="expenses/new" element={<ExpenseForm />} />
             <Route path="expenses/:id/edit" element={<ExpenseForm />} />
+            <Route path="expenses2" element={<Expenses2List />} />
+            <Route path="expenses2/new" element={<Expenses2Form />} />
+            <Route path="expenses2/:id/edit" element={<Expenses2Form />} />
             <Route path="schedule" element={<ScheduleList />} />
             <Route path="schedule/new" element={<ScheduleForm />} />
             <Route path="schedule/:id/edit" element={<ScheduleForm />} />
