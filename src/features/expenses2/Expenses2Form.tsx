@@ -3,22 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { supabase } from '../../lib/supabase';
+import { Expense } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { toast } from '../../components/ui/Toast';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-
-interface Expense2 {
-  id: string;
-  profile_id: string;
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface Expense2FormData {
   amount: number;
@@ -27,7 +17,7 @@ interface Expense2FormData {
   date: string;
 }
 
-export default function Expenses2Form() {
+export default function Expense2Form() {
   const navigate = useNavigate();
   const { id: expense2Id } = useParams();
   const queryClient = useQueryClient();
@@ -57,7 +47,7 @@ export default function Expenses2Form() {
       }
 
       console.log('Fetched expense2 data:', data);
-      return data as Expense2;
+      return data as Expense;
     },
     enabled: !!expense2Id
   });
@@ -94,7 +84,7 @@ export default function Expenses2Form() {
       category: '',
       description: ''
     },
-    mode: 'onChange'
+    mode: 'onSubmit'
   });
 
   useEffect(() => {
