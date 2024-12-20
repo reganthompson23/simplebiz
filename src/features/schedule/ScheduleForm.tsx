@@ -14,6 +14,7 @@ interface ScheduleFormData {
   customer_name: string;
   customer_address: string;
   customer_phone: string;
+  schedule_date: string;
   start_time: string;
   end_time: string;
   job_description: string;
@@ -24,6 +25,7 @@ export default function ScheduleForm() {
   const { id: scheduleId } = useParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const today = new Date().toISOString().split('T')[0];
 
   const { data: existingSchedule, isLoading } = useQuery({
     queryKey: ['schedule', scheduleId],
@@ -46,8 +48,9 @@ export default function ScheduleForm() {
       customer_name: '',
       customer_address: '',
       customer_phone: '',
-      start_time: '',
-      end_time: '',
+      schedule_date: today,
+      start_time: '09:00',
+      end_time: '17:00',
       job_description: ''
     },
     mode: 'onSubmit'
@@ -63,6 +66,7 @@ export default function ScheduleForm() {
       setValue('customer_name', existingSchedule.customer_name);
       setValue('customer_address', existingSchedule.customer_address);
       setValue('customer_phone', existingSchedule.customer_phone);
+      setValue('schedule_date', existingSchedule.schedule_date);
       setValue('start_time', existingSchedule.start_time);
       setValue('end_time', existingSchedule.end_time);
       setValue('job_description', existingSchedule.job_description);
@@ -83,18 +87,14 @@ export default function ScheduleForm() {
     }
 
     try {
-      const formatDateTime = (dateTimeStr: string) => {
-        const date = new Date(dateTimeStr);
-        return date.toISOString();
-      };
-
       const scheduleData = {
         profile_id: user.id,
         customer_name: data.customer_name.trim(),
         customer_address: data.customer_address.trim(),
         customer_phone: data.customer_phone.trim(),
-        start_time: formatDateTime(data.start_time),
-        end_time: formatDateTime(data.end_time),
+        schedule_date: data.schedule_date,
+        start_time: data.start_time,
+        end_time: data.end_time,
         job_description: data.job_description.trim()
       };
       
@@ -230,6 +230,24 @@ export default function ScheduleForm() {
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Date</label>
+          <div className="mt-1">
+            <Input
+              {...register('schedule_date', { 
+                required: { value: true, message: 'Date is required' }
+              })}
+              type="date"
+              min={today}
+              className={errors.schedule_date ? 'border-red-500' : ''}
+              onChange={(e) => console.log('Date changed:', e.target.value)}
+            />
+            {errors.schedule_date && (
+              <p className="mt-1 text-sm text-red-600">{errors.schedule_date.message}</p>
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Start Time</label>
@@ -238,7 +256,7 @@ export default function ScheduleForm() {
                 {...register('start_time', { 
                   required: { value: true, message: 'Start time is required' }
                 })}
-                type="datetime-local"
+                type="time"
                 className={errors.start_time ? 'border-red-500' : ''}
                 onChange={(e) => console.log('Start time changed:', e.target.value)}
               />
@@ -255,7 +273,7 @@ export default function ScheduleForm() {
                 {...register('end_time', { 
                   required: { value: true, message: 'End time is required' }
                 })}
-                type="datetime-local"
+                type="time"
                 className={errors.end_time ? 'border-red-500' : ''}
                 onChange={(e) => console.log('End time changed:', e.target.value)}
               />
