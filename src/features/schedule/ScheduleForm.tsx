@@ -83,13 +83,18 @@ export default function ScheduleForm() {
     }
 
     try {
+      const formatDateTime = (dateTimeStr: string) => {
+        const date = new Date(dateTimeStr);
+        return date.toISOString();
+      };
+
       const scheduleData = {
         profile_id: user.id,
         customer_name: data.customer_name.trim(),
         customer_address: data.customer_address.trim(),
         customer_phone: data.customer_phone.trim(),
-        start_time: data.start_time,
-        end_time: data.end_time,
+        start_time: formatDateTime(data.start_time),
+        end_time: formatDateTime(data.end_time),
         job_description: data.job_description.trim()
       };
       
