@@ -102,8 +102,8 @@ export default function HomePage() {
               <p className="mt-6 text-lg leading-8 text-gray-600">
                 Every business needs 5 key tools: a{' '}
                 <span className="text-blue-600 font-medium">website</span>
-                , a way to{' '}
-                <span className="text-blue-600 font-medium">receive inquiries</span>
+                , a way to receive{' '}
+                <span className="text-blue-600 font-medium">inquiries</span>
                 , create and send{' '}
                 <span className="text-blue-600 font-medium">invoices</span>
                 , track{' '}
