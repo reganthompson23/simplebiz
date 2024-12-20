@@ -88,43 +88,41 @@ export default function ScheduleForm() {
         customer_name: data.customer_name.trim(),
         customer_address: data.customer_address.trim(),
         customer_phone: data.customer_phone.trim(),
-        start_time: new Date(data.start_time).toISOString(),
-        end_time: new Date(data.end_time).toISOString(),
+        start_time: data.start_time,
+        end_time: data.end_time,
         job_description: data.job_description.trim()
       };
       
       console.log('Submitting schedule data:', scheduleData);
 
+      let result;
+      
       if (scheduleId) {
-        const { error } = await supabase
+        result = await supabase
           .from('schedules')
           .update(scheduleData)
           .eq('id', scheduleId)
           .eq('profile_id', user.id);
-
-        if (error) throw error;
-
-        toast({
-          title: 'Success',
-          description: 'Schedule updated successfully',
-          type: 'success',
-        });
       } else {
-        const { error } = await supabase
+        result = await supabase
           .from('schedules')
           .insert(scheduleData);
-
-        if (error) throw error;
-
-        toast({
-          title: 'Success',
-          description: 'Schedule created successfully',
-          type: 'success',
-        });
       }
+
+      if (result.error) {
+        console.error('Supabase error:', result.error);
+        throw result.error;
+      }
+
+      toast({
+        title: 'Success',
+        description: scheduleId ? 'Schedule updated successfully' : 'Schedule created successfully',
+        type: 'success',
+      });
 
       await queryClient.invalidateQueries({ queryKey: ['schedules'] });
       navigate('/schedule');
+
     } catch (error: any) {
       console.error('Form submission error:', error);
       toast({
