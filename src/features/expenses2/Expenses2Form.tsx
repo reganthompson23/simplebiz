@@ -94,7 +94,7 @@ export default function Expenses2Form() {
       category: '',
       description: ''
     },
-    mode: 'onSubmit'
+    mode: 'onChange'
   });
 
   useEffect(() => {
@@ -269,6 +269,7 @@ export default function Expenses2Form() {
               type="text"
               {...register('category', { required: 'Category is required' })}
               className={errors.category ? 'border-red-500' : ''}
+              placeholder="e.g., Fuel, Tools, Supplies"
               value={categoryInput}
               onChange={(e) => {
                 setCategoryInput(e.target.value);
@@ -321,6 +322,7 @@ export default function Expenses2Form() {
               {...register('description')}
               rows={4}
               className="shadow-sm block w-full sm:text-sm border-gray-300 rounded-md"
+              placeholder="Enter expense description"
             />
           </div>
         </div>
