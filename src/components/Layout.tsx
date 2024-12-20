@@ -25,6 +25,7 @@ export default function Layout() {
     { name: 'Inquiries', href: '/inquiries', icon: Users },
     { name: 'Invoices', href: '/invoices', icon: FileText },
     { name: 'Expenses', href: '/expenses', icon: DollarSign },
+    { name: 'Expenses2', href: '/expenses2', icon: DollarSign },
     { name: 'Schedule', href: '/schedule', icon: Calendar },
   ];
 
