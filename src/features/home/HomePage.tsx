@@ -96,11 +96,13 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-                Your Business, <br />
-                Simplified & Streamlined
+                Your Whole Business,<br />
+                One Simple App.
               </h1>
               <p className="mt-6 text-lg leading-8 text-gray-600">
-                Run your entire business from one powerful platform. From winning new clients with your professional website to managing schedules, invoices, and expenses - LiteBiz gives you everything you need to focus on what you do best.
+                There's 5 core things you need when starting a business: A website, a way to receive inquiries, 
+                a way to create and send invoices, a way to track expenses and a way to schedule jobs.
+                LiteBiz puts each of these core tools in the world's simplest single business app.
               </p>
               <div className="mt-10 flex items-center gap-x-6">
                 <Button
