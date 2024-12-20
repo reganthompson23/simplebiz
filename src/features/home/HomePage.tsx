@@ -100,27 +100,17 @@ export default function HomePage() {
                 One Simple App.
               </h1>
               <p className="mt-6 text-lg leading-8 text-gray-600">
-                There's 5 core things you need when starting a business: A{' '}
-                <span className="text-blue-600 font-medium">
-                  website
-                </span>
+                Every business needs 5 key tools: a{' '}
+                <span className="text-blue-600 font-medium">website</span>
                 , a way to{' '}
-                <span className="text-blue-600 font-medium">
-                  receive inquiries
-                </span>
-                , a way to{' '}
-                <span className="text-blue-600 font-medium">
-                  create and send invoices
-                </span>
-                , a way to{' '}
-                <span className="text-blue-600 font-medium">
-                  track expenses
-                </span>
-                {' '}and a way to{' '}
-                <span className="text-blue-600 font-medium">
-                  schedule jobs
-                </span>
-                . LiteBiz puts each of these core tools in the world's simplest single business app.
+                <span className="text-blue-600 font-medium">receive inquiries</span>
+                , create and send{' '}
+                <span className="text-blue-600 font-medium">invoices</span>
+                , track{' '}
+                <span className="text-blue-600 font-medium">expenses</span>
+                , and{' '}
+                <span className="text-blue-600 font-medium">schedule</span>
+                {' '}jobs. LiteBiz brings all of this together in the world's simplest business app.
               </p>
               <div className="mt-10 flex items-center gap-x-6">
                 <Button
