@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -9,6 +9,7 @@ import { toast } from '../../components/ui/Toast';
 
 export default function ScheduleList() {
   const navigate = useNavigate();
+  const [showPastJobs, setShowPastJobs] = useState(false);
 
   const { data: schedules, isLoading, error } = useQuery({
     queryKey: ['schedules'],
@@ -31,6 +32,20 @@ export default function ScheduleList() {
     dateTime.setHours(parseInt(hours), parseInt(minutes));
     return dateTime;
   };
+
+  // Filter schedules based on current time
+  const filteredSchedules = React.useMemo(() => {
+    if (!schedules) return [];
+    const now = new Date();
+
+    return schedules.filter(schedule => {
+      const scheduleDateTime = formatDateTime(schedule.schedule_date, schedule.end_time);
+      if (!scheduleDateTime) return false;
+      
+      const isPast = scheduleDateTime < now;
+      return showPastJobs ? isPast : !isPast;
+    });
+  }, [schedules, showPastJobs]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this schedule?')) return;
@@ -72,9 +87,17 @@ export default function ScheduleList() {
       <div className="bg-white rounded-lg shadow-sm">
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
               <Calendar className="h-6 w-6 text-gray-600 mr-2" />
               <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPastJobs(!showPastJobs)}
+                className="ml-4"
+              >
+                {showPastJobs ? 'Show Upcoming Jobs' : 'Show Past Jobs'}
+              </Button>
             </div>
             <Button
               onClick={() => navigate('/dashboard/schedule/new')}
@@ -88,17 +111,23 @@ export default function ScheduleList() {
 
         {isLoading ? (
           <div className="p-8 text-center text-gray-500">Loading schedules...</div>
-        ) : !schedules?.length ? (
+        ) : !filteredSchedules.length ? (
           <div className="p-8 text-center text-gray-500">
-            <p className="mb-4">No schedules created yet.</p>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/dashboard/schedule/new')}
-              className="inline-flex items-center"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Schedule
-            </Button>
+            <p className="mb-4">
+              {showPastJobs 
+                ? 'No past jobs found.' 
+                : 'No upcoming jobs scheduled.'}
+            </p>
+            {!showPastJobs && (
+              <Button
+                variant="outline"
+                onClick={() => navigate('/dashboard/schedule/new')}
+                className="inline-flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Schedule
+              </Button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -123,7 +152,7 @@ export default function ScheduleList() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {schedules.map((schedule) => {
+                {filteredSchedules.map((schedule) => {
                   const startDateTime = formatDateTime(schedule.schedule_date, schedule.start_time);
                   const endDateTime = formatDateTime(schedule.schedule_date, schedule.end_time);
                   
