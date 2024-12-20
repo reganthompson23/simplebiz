@@ -100,19 +100,28 @@ export default function ScheduleForm() {
       if (scheduleId) {
         result = await supabase
           .from('schedules')
-          .update(scheduleData)
+          .update({
+            ...scheduleData,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', scheduleId)
-          .eq('profile_id', user.id);
+          .eq('profile_id', user.id)
+          .select()
+          .single();
       } else {
         result = await supabase
           .from('schedules')
-          .insert(scheduleData);
+          .insert(scheduleData)
+          .select()
+          .single();
       }
 
       if (result.error) {
         console.error('Supabase error:', result.error);
         throw result.error;
       }
+
+      console.log('Operation successful:', result.data);
 
       toast({
         title: 'Success',
@@ -153,7 +162,18 @@ export default function ScheduleForm() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log('Form submit event triggered');
+          handleSubmit((data) => {
+            console.log('HandleSubmit callback triggered');
+            console.log('Form data:', data);
+            onSubmit(data);
+          })(e);
+        }} 
+        className="space-y-6"
+      >
         <div>
           <label className="block text-sm font-medium text-gray-700">Customer Name</label>
           <div className="mt-1">
