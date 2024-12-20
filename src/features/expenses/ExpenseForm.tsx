@@ -1,112 +1,136 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
 import { supabase } from '../../lib/supabase';
-import { Expense } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { toast } from '../../components/ui/Toast';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
-interface ExpenseFormData {
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
-
 export default function ExpenseForm() {
   const navigate = useNavigate();
   const { id: expenseId } = useParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [categoryInput, setCategoryInput] = useState('');
-  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
-  console.log('Current user:', user); // Debug log for user authentication
+  // Basic form state
+  const [formData, setFormData] = useState({
+    amount: '',
+    category: '',
+    description: '',
+    date: today
+  });
+
+  // Basic error state
+  const [errors, setErrors] = useState({
+    amount: '',
+    category: '',
+    description: '',
+    date: ''
+  });
+
+  // Category suggestions state
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
 
   // Fetch existing expense if editing
   const { data: existingExpense, isLoading } = useQuery({
     queryKey: ['expense', expenseId],
     queryFn: async () => {
       if (!expenseId) return null;
-
-      console.log('Fetching expense with ID:', expenseId); // Debug log
-
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
         .eq('id', expenseId)
         .single();
 
-      if (error) {
-        console.error('Error fetching expense:', error); // Debug log
-        throw error;
-      }
-
-      console.log('Fetched expense data:', data); // Debug log
-      return data as Expense;
+      if (error) throw error;
+      return data;
     },
     enabled: !!expenseId
   });
 
-  // Fetch all unique categories for autocomplete
+  // Fetch categories for suggestions
   const { data: categories } = useQuery({
     queryKey: ['expense-categories'],
     queryFn: async () => {
-      if (!user?.id) {
-        console.log('No user ID available for fetching categories'); // Debug log
-        return [];
-      }
-
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from('expenses')
         .select('category')
         .eq('profile_id', user.id)
         .order('category');
 
-      if (error) {
-        console.error('Error fetching categories:', error); // Debug log
-        throw error;
-      }
-
-      // Get unique categories
+      if (error) throw error;
       const uniqueCategories = Array.from(new Set(data.map(item => item.category)));
-      return uniqueCategories.filter(Boolean); // Remove empty categories
+      return uniqueCategories.filter(Boolean);
     },
     enabled: !!user?.id
-  });
-
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ExpenseFormData>({
-    defaultValues: {
-      date: today,
-      amount: undefined,
-      category: '',
-      description: ''
-    },
-    mode: 'onSubmit'
   });
 
   // Set form data when existing expense is loaded
   useEffect(() => {
     if (existingExpense) {
-      console.log('Setting form data from existing expense:', existingExpense); // Debug log
-      setValue('amount', existingExpense.amount);
-      setValue('category', existingExpense.category);
-      setValue('description', existingExpense.description || '');
-      setValue('date', existingExpense.date);
-      setCategoryInput(existingExpense.category);
+      setFormData({
+        amount: existingExpense.amount.toString(),
+        category: existingExpense.category,
+        description: existingExpense.description || '',
+        date: existingExpense.date
+      });
     }
-  }, [existingExpense, setValue]);
+  }, [existingExpense]);
 
-  const onSubmit = async (data: ExpenseFormData) => {
-    console.log('Form submitted with data:', data); // Debug log
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user types
+    setErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  };
+
+  // Basic validation
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = { ...errors };
+
+    const amount = parseFloat(formData.amount.replace(/[^0-9.]/g, ''));
+    if (!amount || isNaN(amount) || amount <= 0) {
+      newErrors.amount = 'Please enter a valid amount greater than 0';
+      isValid = false;
+    }
+
+    if (!formData.category.trim()) {
+      newErrors.category = 'Category is required';
+      isValid = false;
+    }
+
+    if (!formData.date) {
+      newErrors.date = 'Date is required';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log('Form submitted with data:', formData);
+
+    if (!validateForm()) {
+      console.log('Validation failed');
+      return;
+    }
 
     if (!user?.id) {
-      console.error('No user ID available - user not authenticated'); // Debug log
       toast({
         title: 'Authentication Error',
         description: 'Please log in to create expenses',
@@ -117,87 +141,51 @@ export default function ExpenseForm() {
     }
 
     try {
-      // Clean and format the amount
-      const cleanAmount = data.amount?.toString().replace(/[^0-9.]/g, '') || '0';
-      const formattedAmount = parseFloat(cleanAmount);
-      
-      console.log('Formatted amount:', formattedAmount); // Debug log
-      
-      if (isNaN(formattedAmount) || formattedAmount <= 0) {
-        console.error('Invalid amount:', formattedAmount); // Debug log
-        toast({
-          title: 'Validation Error',
-          description: 'Please enter a valid amount greater than 0',
-          type: 'error',
-        });
-        return;
-      }
-
-      // Round to 2 decimal places
-      const finalAmount = Math.round(formattedAmount * 100) / 100;
-      
-      // Ensure we have a valid date (use today if somehow the date is missing)
-      const expenseDate = data.date || today;
+      const cleanAmount = formData.amount.replace(/[^0-9.]/g, '');
+      const finalAmount = Math.round(parseFloat(cleanAmount) * 100) / 100;
       
       const expenseData = {
         profile_id: user.id,
         amount: finalAmount,
-        category: data.category,
-        description: data.description,
-        date: expenseDate
+        category: formData.category,
+        description: formData.description,
+        date: formData.date
       };
-      
-      console.log('Submitting expense data to Supabase:', expenseData); // Debug log
 
+      let result;
+      
       if (expenseId) {
-        // Update existing expense
-        const { error } = await supabase
+        result = await supabase
           .from('expenses')
           .update({
             ...expenseData,
             updated_at: new Date().toISOString()
           })
           .eq('id', expenseId)
-          .eq('profile_id', user.id);
-
-        if (error) {
-          console.error('Error updating expense:', error); // Debug log
-          throw error;
-        }
-
-        toast({
-          title: 'Success',
-          description: 'Expense updated successfully',
-          type: 'success',
-        });
+          .eq('profile_id', user.id)
+          .select()
+          .single();
       } else {
-        // Create new expense
-        const { data: newExpense, error } = await supabase
+        result = await supabase
           .from('expenses')
           .insert(expenseData)
           .select()
           .single();
-
-        if (error) {
-          console.error('Error creating expense:', error); // Debug log
-          throw error;
-        }
-
-        console.log('Created expense:', newExpense); // Debug log
-
-        toast({
-          title: 'Success',
-          description: 'Expense created successfully',
-          type: 'success',
-        });
       }
 
-      // Invalidate queries and navigate back
+      if (result.error) throw result.error;
+
+      toast({
+        title: 'Success',
+        description: expenseId ? 'Expense updated successfully' : 'Expense created successfully',
+        type: 'success',
+      });
+
       await queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      await queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
       navigate('/expenses');
-    } catch (error: any) {
-      console.error('Error in form submission:', error); // Debug log
+
+    } catch (error) {
+      console.error('Form submission error:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to save expense',
@@ -206,8 +194,9 @@ export default function ExpenseForm() {
     }
   };
 
+  // Filter categories for suggestions
   const filteredCategories = categories?.filter(category => 
-    category.toLowerCase().includes(categoryInput.toLowerCase())
+    category.toLowerCase().includes(formData.category.toLowerCase())
   ) || [];
 
   if (isLoading) {
@@ -230,47 +219,20 @@ export default function ExpenseForm() {
         </h1>
       </div>
 
-      <form 
-        onSubmit={(e) => {
-          e.preventDefault();
-          console.log('Form submit event triggered'); // Debug log for form submission event
-          handleSubmit((data) => {
-            console.log('HandleSubmit callback triggered'); // Debug log for handleSubmit
-            console.log('Form data:', data); // Debug log for form data
-            onSubmit(data);
-          })(e);
-        }} 
-        className="space-y-6"
-      >
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700">Amount</label>
           <div className="mt-1">
             <Input
+              name="amount"
+              value={formData.amount}
+              onChange={handleChange}
               type="text"
-              {...register('amount', { 
-                required: 'Amount is required',
-                validate: value => {
-                  console.log('Validating amount:', value); // Debug log for amount validation
-                  const cleanValue = value?.toString().replace(/[^0-9.]/g, '') || '';
-                  const num = parseFloat(cleanValue);
-                  return !isNaN(num) && num > 0 || 'Amount must be greater than 0';
-                }
-              })}
-              className="block w-full"
               placeholder="0.00"
-              onChange={(e) => {
-                console.log('Amount changed:', e.target.value); // Debug log for amount changes
-                let value = e.target.value;
-                value = value.replace(/[^0-9.]/g, '');
-                const parts = value.split('.');
-                if (parts.length > 2) {
-                  value = parts[0] + '.' + parts.slice(1).join('');
-                }
-                setValue('amount', value);
-              }}
+              className={errors.amount ? 'border-red-500' : ''}
             />
             {errors.amount && (
-              <p className="mt-1 text-sm text-red-600">{errors.amount.message}</p>
+              <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
             )}
           </div>
         </div>
@@ -279,27 +241,25 @@ export default function ExpenseForm() {
           <label className="block text-sm font-medium text-gray-700">Category</label>
           <div className="mt-1 relative">
             <Input
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
               type="text"
-              {...register('category', { required: 'Category is required' })}
-              onChange={(e) => {
-                setValue('category', e.target.value);
-                setCategoryInput(e.target.value);
-                setShowCategorySuggestions(true);
-              }}
-              onFocus={() => setShowCategorySuggestions(true)}
-              className="block w-full"
               placeholder="e.g., Fuel, Tools, Supplies"
+              className={errors.category ? 'border-red-500' : ''}
+              onFocus={() => setShowCategorySuggestions(true)}
             />
-            
+            {errors.category && (
+              <p className="mt-1 text-sm text-red-600">{errors.category}</p>
+            )}
             {showCategorySuggestions && filteredCategories.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm">
-                {filteredCategories.map((category) => (
+              <div className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border">
+                {filteredCategories.map((category, index) => (
                   <div
-                    key={category}
-                    className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50"
+                    key={index}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                     onClick={() => {
-                      setValue('category', category, { shouldValidate: true });
-                      setCategoryInput(category);
+                      setFormData(prev => ({ ...prev, category }));
                       setShowCategorySuggestions(false);
                     }}
                   >
@@ -308,28 +268,6 @@ export default function ExpenseForm() {
                 ))}
               </div>
             )}
-            
-            {errors.category && (
-              <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Description</label>
-          <div className="mt-1">
-            <Input
-              type="text"
-              {...register('description', { required: 'Description is required' })}
-              onChange={(e) => {
-                setValue('description', e.target.value);
-              }}
-              className="block w-full"
-              placeholder="Enter expense description"
-            />
-            {errors.description && (
-              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
-            )}
           </div>
         </div>
 
@@ -337,14 +275,34 @@ export default function ExpenseForm() {
           <label className="block text-sm font-medium text-gray-700">Date</label>
           <div className="mt-1">
             <Input
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
               type="date"
-              {...register('date', {
-                required: true,
-                value: today // Ensure we always have a value
-              })}
-              defaultValue={today}
-              className="block w-full"
+              className={errors.date ? 'border-red-500' : ''}
             />
+            {errors.date && (
+              <p className="mt-1 text-sm text-red-600">{errors.date}</p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <div className="mt-1">
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={4}
+              className={`block w-full rounded-md border ${
+                errors.description ? 'border-red-500' : 'border-gray-300'
+              } shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm`}
+              placeholder="Enter expense description"
+            />
+            {errors.description && (
+              <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+            )}
           </div>
         </div>
 
@@ -356,11 +314,7 @@ export default function ExpenseForm() {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            onClick={() => console.log('Submit button clicked')}
-          >
+          <Button type="submit">
             {expenseId ? 'Update Expense' : 'Create Expense'}
           </Button>
         </div>
