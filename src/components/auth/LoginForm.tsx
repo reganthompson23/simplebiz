@@ -62,7 +62,7 @@ export default function LoginForm() {
         // Wait for session to be established
         const { data: session } = await supabase.auth.getSession();
         if (session?.session) {
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         // Sign in flow
@@ -81,8 +81,8 @@ export default function LoginForm() {
         console.log('Session data:', sessionData);
 
         if (signInData.session) {
-          console.log('Login successful, navigating to /');
-          navigate('/');
+          console.log('Login successful, navigating to /dashboard');
+          navigate('/dashboard');
         }
       }
     } catch (err: any) {
@@ -98,7 +98,7 @@ export default function LoginForm() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isSignUp ? 'Create your account' : 'Sign in to SimpleBiz'}
+            {isSignUp ? 'Create your account' : 'Sign in to LiteBiz'}
           </h2>
         </div>
         
