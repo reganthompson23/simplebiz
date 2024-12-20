@@ -118,22 +118,22 @@ export default function ScheduleList() {
                   <tr key={schedule.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div>
-                        {new Date(schedule.start_time).toLocaleDateString('en-AU', {
+                        {schedule.start_time ? new Date(schedule.start_time).toLocaleDateString('en-AU', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric'
-                        })}
+                        }) : 'Invalid Date'}
                       </div>
                       <div className="text-xs">
-                        {new Date(schedule.start_time).toLocaleTimeString('en-AU', {
+                        {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString('en-AU', {
                           hour: '2-digit',
                           minute: '2-digit'
-                        })}
+                        }) : '--:--'}
                         {' - '}
-                        {new Date(schedule.end_time).toLocaleTimeString('en-AU', {
+                        {schedule.end_time ? new Date(schedule.end_time).toLocaleTimeString('en-AU', {
                           hour: '2-digit',
                           minute: '2-digit'
-                        })}
+                        }) : '--:--'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
