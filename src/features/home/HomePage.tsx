@@ -42,6 +42,17 @@ export default function HomePage() {
     }
   ];
 
+  const tradeBusinesses = [
+    'Electricians',
+    'Carpenters',
+    'Landscapers',
+    'Cleaners',
+    'HVAC Services',
+    'Roofers',
+    'Builders',
+    'Tilers'
+  ];
+
   const benefits = [
     'All-in-one solution for small business owners',
     'No technical expertise required',
@@ -57,24 +68,83 @@ export default function HomePage() {
         <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
           <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-blue-500 to-blue-200 opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" />
         </div>
-        
-        <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              SimpleBiz
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              The all-in-one business management platform that helps you focus on what matters most - running your business.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Button
-                onClick={() => navigate('/login')}
-                className="text-base"
-              >
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+
+        {/* Navigation */}
+        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold text-gray-900">LiteBiz</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/login')}
+              className="text-sm"
+            >
+              Login
+            </Button>
+            <Button
+              onClick={() => navigate('/login')}
+              className="text-sm"
+            >
+              Get Started
+            </Button>
+          </div>
+        </div>
+
+        {/* Hero Content */}
+        <div className="mx-auto max-w-7xl pt-16 sm:pt-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+                Instant Estimates on Autopilot
+              </h1>
+              <p className="mt-6 text-lg leading-8 text-gray-600">
+                Transform your pricing docs into an intelligent estimate bot in minutes, ready to serve customers 24/7. Turn every website visit into a qualified lead with automated project scoping and instant estimates.
+              </p>
+              <div className="mt-10 flex items-center gap-x-6">
+                <Button
+                  onClick={() => navigate('/login')}
+                  className="text-base"
+                >
+                  Start Free Trial
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {}}
+                  className="text-base"
+                >
+                  See it in action
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
+            <div className="relative">
+              <div className="aspect-[4/3] bg-gray-100 rounded-lg">
+                {/* Placeholder for hero image */}
+                <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                  Image placeholder
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Trade Businesses Section */}
+      <div className="bg-white py-16">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Perfect For Trade and Service Businesses
+          </h2>
+          <div className="grid grid-cols-4 md:grid-cols-8 gap-8 text-center text-gray-600">
+            {tradeBusinesses.map((business) => (
+              <div key={business} className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full mb-3 flex items-center justify-center">
+                  {/* Placeholder for business icon */}
+                </div>
+                <span className="text-sm">{business}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -88,7 +158,7 @@ export default function HomePage() {
               Five Essential Tools in One Simple App
             </p>
             <p className="mt-6 text-lg leading-8 text-gray-600">
-              Stop juggling multiple apps and spreadsheets. SimpleBiz brings together all the tools you need to run your business efficiently.
+              Stop juggling multiple apps and spreadsheets. LiteBiz brings together all the tools you need to run your business efficiently.
             </p>
           </div>
           <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
@@ -113,7 +183,7 @@ export default function HomePage() {
       <div className="bg-gray-50 py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl lg:text-center">
-            <h2 className="text-base font-semibold leading-7 text-blue-600">Why Choose SimpleBiz</h2>
+            <h2 className="text-base font-semibold leading-7 text-blue-600">Why Choose LiteBiz</h2>
             <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
               Built for Business Owners, Not Accountants
             </p>
@@ -139,7 +209,7 @@ export default function HomePage() {
               Start Managing Your Business Better Today
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">
-              Join thousands of business owners who are saving time and growing their businesses with SimpleBiz.
+              Join thousands of business owners who are saving time and growing their businesses with LiteBiz.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button
