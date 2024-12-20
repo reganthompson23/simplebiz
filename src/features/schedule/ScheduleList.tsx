@@ -16,12 +16,20 @@ export default function ScheduleList() {
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
-        .order('start_time', { ascending: true });
+        .order('schedule_date', { ascending: true });
       
       if (error) throw error;
       return data as Schedule[];
     },
   });
+
+  const formatDateTime = (date: string, time: string) => {
+    if (!date || !time) return null;
+    const [hours, minutes] = time.split(':');
+    const dateTime = new Date(date);
+    dateTime.setHours(parseInt(hours), parseInt(minutes));
+    return dateTime;
+  };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this schedule?')) return;
@@ -114,65 +122,70 @@ export default function ScheduleList() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {schedules.map((schedule) => (
-                  <tr key={schedule.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>
-                        {schedule.start_time ? new Date(schedule.start_time).toLocaleDateString('en-AU', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        }) : 'Invalid Date'}
-                      </div>
-                      <div className="text-xs">
-                        {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString('en-AU', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        }) : '--:--'}
-                        {' - '}
-                        {schedule.end_time ? new Date(schedule.end_time).toLocaleTimeString('en-AU', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        }) : '--:--'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {schedule.customer_name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {schedule.customer_address}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {schedule.customer_phone}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">
-                        {schedule.job_description}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/schedule/${schedule.id}/edit`)}
-                        className="mr-2"
-                      >
-                        <Pencil className="h-4 w-4 text-blue-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(schedule.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {schedules.map((schedule) => {
+                  const startDateTime = formatDateTime(schedule.schedule_date, schedule.start_time);
+                  const endDateTime = formatDateTime(schedule.schedule_date, schedule.end_time);
+                  
+                  return (
+                    <tr key={schedule.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div>
+                          {startDateTime?.toLocaleDateString('en-AU', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          }) || 'Invalid Date'}
+                        </div>
+                        <div className="text-xs">
+                          {startDateTime?.toLocaleTimeString('en-AU', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) || '--:--'}
+                          {' - '}
+                          {endDateTime?.toLocaleTimeString('en-AU', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) || '--:--'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {schedule.customer_name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {schedule.customer_address}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {schedule.customer_phone}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900 max-w-xs truncate">
+                          {schedule.job_description}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/schedule/${schedule.id}/edit`)}
+                          className="mr-2"
+                        >
+                          <Pencil className="h-4 w-4 text-blue-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(schedule.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
