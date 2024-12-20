@@ -16,6 +16,21 @@ export default function HomePage() {
 
   const features = [
     {
+      icon: LayoutGrid,
+      title: 'Website Builder',
+      description: 'Build and maintain your professional business website without any technical knowledge.'
+    },
+    {
+      icon: Users,
+      title: 'Lead Management',
+      description: 'Never miss a potential client with our organized inquiry tracking system.'
+    },
+    {
+      icon: FileText,
+      title: 'Invoice Generation',
+      description: 'Create and manage professional invoices for your clients in seconds.'
+    },
+    {
       icon: Calendar,
       title: 'Schedule Management',
       description: 'Easily manage your appointments and jobs with our intuitive scheduling system.'
@@ -24,21 +39,6 @@ export default function HomePage() {
       icon: DollarSign,
       title: 'Expense Tracking',
       description: 'Keep track of all your business expenses with categorization and reporting.'
-    },
-    {
-      icon: FileText,
-      title: 'Invoice Generation',
-      description: 'Create and manage professional invoices for your clients in seconds.'
-    },
-    {
-      icon: Users,
-      title: 'Lead Management',
-      description: 'Never miss a potential client with our organized inquiry tracking system.'
-    },
-    {
-      icon: LayoutGrid,
-      title: 'Website Builder',
-      description: 'Build and maintain your business website without any technical knowledge.'
     }
   ];
 
@@ -96,10 +96,11 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-                Instant Estimates on Autopilot
+                Your Business, <br />
+                Simplified & Streamlined
               </h1>
               <p className="mt-6 text-lg leading-8 text-gray-600">
-                Transform your pricing docs into an intelligent estimate bot in minutes, ready to serve customers 24/7. Turn every website visit into a qualified lead with automated project scoping and instant estimates.
+                Run your entire business from one powerful platform. From winning new clients with your professional website to managing schedules, invoices, and expenses - LiteBiz gives you everything you need to focus on what you do best.
               </p>
               <div className="mt-10 flex items-center gap-x-6">
                 <Button
