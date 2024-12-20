@@ -3,12 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { supabase } from '../../lib/supabase';
-import { Expense } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { toast } from '../../components/ui/Toast';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+
+interface Expense2 {
+  id: string;
+  profile_id: string;
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface Expense2FormData {
   amount: number;
@@ -47,7 +57,7 @@ export default function Expense2Form() {
       }
 
       console.log('Fetched expense2 data:', data);
-      return data as Expense;
+      return data as Expense2;
     },
     enabled: !!expense2Id
   });
@@ -212,10 +222,10 @@ export default function Expense2Form() {
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Expenses
+          Back to Expenses2
         </Button>
         <h1 className="text-2xl font-bold text-gray-900">
-          {expense2Id ? 'Edit Expense' : 'New Expense'}
+          {expense2Id ? 'Edit Expense2' : 'New Expense2'}
         </h1>
       </div>
 
@@ -326,7 +336,7 @@ export default function Expense2Form() {
             Cancel
           </Button>
           <Button type="submit">
-            {expense2Id ? 'Update Expense' : 'Create Expense'}
+            {expense2Id ? 'Update Expense2' : 'Create Expense2'}
           </Button>
         </div>
       </form>
