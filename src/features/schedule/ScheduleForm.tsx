@@ -188,7 +188,7 @@ export default function ScheduleForm() {
       });
 
       await queryClient.invalidateQueries({ queryKey: ['schedules'] });
-      navigate('/schedule');
+      navigate('/dashboard/schedule');
 
     } catch (error) {
       console.error('Form submission error:', error);
@@ -209,7 +209,7 @@ export default function ScheduleForm() {
       <div className="mb-6">
         <Button
           variant="ghost"
-          onClick={() => navigate('/schedule')}
+          onClick={() => navigate('/dashboard/schedule')}
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -342,7 +342,7 @@ export default function ScheduleForm() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/schedule')}
+            onClick={() => navigate('/dashboard/schedule')}
           >
             Cancel
           </Button>

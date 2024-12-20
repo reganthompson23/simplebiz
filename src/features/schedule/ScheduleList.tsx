@@ -77,7 +77,7 @@ export default function ScheduleList() {
               <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
             </div>
             <Button
-              onClick={() => navigate('/schedule/new')}
+              onClick={() => navigate('/dashboard/schedule/new')}
               className="inline-flex items-center"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -93,7 +93,7 @@ export default function ScheduleList() {
             <p className="mb-4">No schedules created yet.</p>
             <Button
               variant="outline"
-              onClick={() => navigate('/schedule/new')}
+              onClick={() => navigate('/dashboard/schedule/new')}
               className="inline-flex items-center"
             >
               <Plus className="h-4 w-4 mr-2" />
