@@ -177,16 +177,14 @@ export default function InvoiceList() {
                         )
                       }
                     </PDFDownloadLink>
-                    {invoice.status === 'draft' && (
-                      <button
-                        onClick={() => {
-                          // TODO: Implement send functionality
-                        }}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        <Send className="h-4 w-4 inline" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        // TODO: Implement send functionality
+                      }}
+                      className="text-green-600 hover:text-green-900"
+                    >
+                      <Send className="h-4 w-4 inline" />
+                    </button>
                   </td>
                 </tr>
               ))}
