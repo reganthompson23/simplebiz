@@ -44,13 +44,21 @@ export default function HomePage() {
 
   const tradeBusinesses = [
     'Electricians',
+    'Interior Designers',
     'Carpenters',
+    'Beauty Services',
     'Landscapers',
+    'Personal Trainers',
     'Cleaners',
+    'Event Planners',
     'HVAC Services',
+    'Makeup Artists',
     'Roofers',
+    'Photographers',
     'Builders',
-    'Tilers'
+    'Caterers',
+    'Tilers',
+    'Wedding Planners'
   ];
 
   const benefits = [
@@ -147,7 +155,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-center mb-12">
             Perfect For Trade and Service Businesses
           </h2>
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-8 text-center text-gray-600">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-8 text-center text-gray-600">
             {tradeBusinesses.map((business) => (
               <div key={business} className="flex flex-col items-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full mb-3 flex items-center justify-center">
