@@ -8,7 +8,23 @@ import {
   Users,
   LayoutGrid,
   ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  Zap,
+  Palette,
+  Hammer,
+  Scissors,
+  Trees,
+  Dumbbell,
+  Sparkles,
+  PartyPopper,
+  Thermometer,
+  Brush,
+  Home,
+  Camera,
+  Building2,
+  UtensilsCrossed,
+  Grid3X3,
+  Heart
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -43,22 +59,22 @@ export default function HomePage() {
   ];
 
   const tradeBusinesses = [
-    'Electricians',
-    'Interior Designers',
-    'Carpenters',
-    'Beauty Services',
-    'Landscapers',
-    'Personal Trainers',
-    'Cleaners',
-    'Event Planners',
-    'HVAC Services',
-    'Makeup Artists',
-    'Roofers',
-    'Photographers',
-    'Builders',
-    'Caterers',
-    'Tilers',
-    'Wedding Planners'
+    { name: 'Electricians', icon: Zap },
+    { name: 'Interior Designers', icon: Palette },
+    { name: 'Carpenters', icon: Hammer },
+    { name: 'Beauty Services', icon: Scissors },
+    { name: 'Landscapers', icon: Trees },
+    { name: 'Personal Trainers', icon: Dumbbell },
+    { name: 'Cleaners', icon: Sparkles },
+    { name: 'Event Planners', icon: PartyPopper },
+    { name: 'HVAC Services', icon: Thermometer },
+    { name: 'Makeup Artists', icon: Brush },
+    { name: 'Roofers', icon: Home },
+    { name: 'Photographers', icon: Camera },
+    { name: 'Builders', icon: Building2 },
+    { name: 'Caterers', icon: UtensilsCrossed },
+    { name: 'Tilers', icon: Grid3X3 },
+    { name: 'Wedding Planners', icon: Heart }
   ];
 
   const benefits = [
@@ -157,11 +173,11 @@ export default function HomePage() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-8 text-center text-gray-600">
             {tradeBusinesses.map((business) => (
-              <div key={business} className="flex flex-col items-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full mb-3 flex items-center justify-center">
-                  {/* Placeholder for business icon */}
+              <div key={business.name} className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-blue-50 rounded-full mb-3 flex items-center justify-center text-blue-600">
+                  <business.icon className="h-8 w-8" />
                 </div>
-                <span className="text-sm">{business}</span>
+                <span className="text-sm">{business.name}</span>
               </div>
             ))}
           </div>
