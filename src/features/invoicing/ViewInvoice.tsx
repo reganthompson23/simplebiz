@@ -1,16 +1,48 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Invoice } from '../../types';
 import { formatCurrency } from '../../lib/utils';
 import { ArrowLeft, Download } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import InvoicePDF from './InvoicePDF';
+import { toast } from '../../components/ui/Toast';
 
 export default function ViewInvoice() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Add status update mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ status }: { status: string }) => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+      toast({
+        title: 'Success',
+        description: 'Invoice status updated successfully',
+        type: 'success',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update status',
+        type: 'error',
+      });
+    }
+  });
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ['invoice', id],
@@ -33,6 +65,11 @@ export default function ViewInvoice() {
       return { ...invoice, items } as Invoice;
     }
   });
+
+  // Handle status change
+  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    updateStatusMutation.mutate({ status: event.target.value });
+  };
 
   if (isLoading) {
     return (
@@ -118,19 +155,31 @@ export default function ViewInvoice() {
               </p>
             )}
           </div>
-          <div className="px-4 py-2 rounded-full text-sm font-semibold capitalize" 
-            style={{
-              backgroundColor: invoice.status === 'paid' ? 'rgb(220 252 231)' : 
-                             invoice.status === 'sent' ? 'rgb(219 234 254)' :
-                             invoice.status === 'overdue' ? 'rgb(254 226 226)' :
-                             'rgb(229 231 235)',
-              color: invoice.status === 'paid' ? 'rgb(22 101 52)' :
-                     invoice.status === 'sent' ? 'rgb(29 78 216)' :
-                     invoice.status === 'overdue' ? 'rgb(153 27 27)' :
-                     'rgb(55 65 81)'
-            }}
-          >
-            {invoice.status}
+          <div className="flex items-center gap-2">
+            <div className="px-4 py-2 rounded-full text-sm font-semibold capitalize" 
+              style={{
+                backgroundColor: invoice.status === 'paid' ? 'rgb(220 252 231)' : 
+                               invoice.status === 'sent' ? 'rgb(219 234 254)' :
+                               invoice.status === 'overdue' ? 'rgb(254 226 226)' :
+                               'rgb(229 231 235)',
+                color: invoice.status === 'paid' ? 'rgb(22 101 52)' :
+                       invoice.status === 'sent' ? 'rgb(29 78 216)' :
+                       invoice.status === 'overdue' ? 'rgb(153 27 27)' :
+                       'rgb(55 65 81)'
+              }}
+            >
+              {invoice.status}
+            </div>
+            <select
+              value={invoice.status}
+              onChange={handleStatusChange}
+              className="ml-2 rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+            </select>
           </div>
         </div>
 
