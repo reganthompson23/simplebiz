@@ -169,13 +169,13 @@ export default function InvoiceList() {
                       fileName={`invoice-${invoice.invoice_number}.pdf`}
                       className="text-gray-600 hover:text-gray-900"
                     >
-                      {({ loading }: { loading: boolean }) => (
+                      {({ loading }) => 
                         loading ? (
                           <span className="text-gray-400">...</span>
                         ) : (
                           <Download className="h-4 w-4 inline" />
                         )
-                      )}
+                      }
                     </PDFDownloadLink>
                     {invoice.status === 'draft' && (
                       <button
