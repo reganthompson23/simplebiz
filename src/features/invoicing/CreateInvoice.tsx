@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { Invoice, InvoiceItem } from '../../types';
 import { formatCurrency } from '../../lib/utils';
 import { Plus, Trash2, Save, Send } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast } from '../../components/ui/Toast';
 
 interface InvoiceFormData {
   fromDetails: {
