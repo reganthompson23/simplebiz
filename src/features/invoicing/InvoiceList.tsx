@@ -153,7 +153,7 @@ export default function InvoiceList() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button
-                      onClick={() => navigate(`/dashboard/invoices/view/${invoice.id}`)}
+                      onClick={() => navigate(`/dashboard/invoices/${invoice.id}`)}
                       className="text-blue-600 hover:text-blue-900"
                     >
                       <Eye className="h-4 w-4 inline" />
