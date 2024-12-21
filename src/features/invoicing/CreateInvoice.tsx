@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { Invoice, InvoiceItem } from '../../types';
 import { formatCurrency } from '../../lib/utils';
 import { Plus, Trash2, Save, Send } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface InvoiceFormData {
   fromDetails: {
@@ -120,115 +121,131 @@ export default function CreateInvoice() {
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (data: InvoiceFormData) => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .single();
-
-      if (!profile) throw new Error('Profile not found');
-
-      // Get the next invoice number for this business (only for new invoices)
-      let invoiceNumber = existingInvoice?.invoice_number;
-      if (!invoiceNumber) {
-        const { data: lastInvoice } = await supabase
-          .from('invoices')
-          .select('invoice_number')
-          .eq('profile_id', profile.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
+      setIsSubmitting(true);
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
           .single();
 
-        invoiceNumber = lastInvoice 
-          ? String(Number(lastInvoice.invoice_number) + 1).padStart(4, '0')
-          : '0001';
-      }
+        if (!profile) throw new Error('Profile not found');
 
-      // Format dates for PostgreSQL
-      const formattedIssueDate = new Date(data.issueDate).toISOString().split('T')[0];
-      const formattedDueDate = data.dueDate ? new Date(data.dueDate).toISOString().split('T')[0] : null;
+        // Get the next invoice number for this business (only for new invoices)
+        let invoiceNumber = existingInvoice?.invoice_number;
+        if (!invoiceNumber) {
+          const { data: lastInvoice } = await supabase
+            .from('invoices')
+            .select('invoice_number')
+            .eq('profile_id', profile.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
 
-      const invoiceData = {
-        profile_id: profile.id,
-        invoice_number: invoiceNumber,
-        from_details: data.fromDetails,
-        to_details: data.toDetails,
-        payment_terms: data.paymentTerms,
-        issue_date: formattedIssueDate,
-        due_date: formattedDueDate,
-        subtotal,
-        discount_type: discountType,
-        discount_value: discountValue,
-        tax_rate: taxRate,
-        total,
-        notes: data.notes,
-        terms: data.terms,
-        status: 'draft'
-      };
+          invoiceNumber = lastInvoice 
+            ? String(Number(lastInvoice.invoice_number) + 1).padStart(4, '0')
+            : '0001';
+        }
 
-      let invoice;
-      if (invoiceId) {
-        // Update existing invoice
-        const { data: updatedInvoice, error: invoiceError } = await supabase
-          .from('invoices')
-          .update(invoiceData)
-          .eq('id', invoiceId)
-          .select()
-          .single();
+        // Format dates for PostgreSQL
+        const formattedIssueDate = new Date(data.issueDate).toISOString().split('T')[0];
+        const formattedDueDate = data.dueDate ? new Date(data.dueDate).toISOString().split('T')[0] : null;
 
-        if (invoiceError) throw invoiceError;
-        invoice = updatedInvoice;
+        const invoiceData = {
+          profile_id: profile.id,
+          invoice_number: invoiceNumber,
+          from_details: data.fromDetails,
+          to_details: data.toDetails,
+          payment_terms: data.paymentTerms,
+          issue_date: formattedIssueDate,
+          due_date: formattedDueDate,
+          subtotal,
+          discount_type: discountType,
+          discount_value: discountValue,
+          tax_rate: taxRate,
+          total,
+          notes: data.notes,
+          terms: data.terms,
+          status: 'draft'
+        };
 
-        // Delete existing items
-        await supabase
+        let invoice;
+        if (invoiceId) {
+          // Update existing invoice
+          const { data: updatedInvoice, error: invoiceError } = await supabase
+            .from('invoices')
+            .update(invoiceData)
+            .eq('id', invoiceId)
+            .select()
+            .single();
+
+          if (invoiceError) throw invoiceError;
+          invoice = updatedInvoice;
+
+          // Delete existing items
+          await supabase
+            .from('invoice_items')
+            .delete()
+            .eq('invoice_id', invoiceId);
+        } else {
+          // Create new invoice
+          const { data: newInvoice, error: invoiceError } = await supabase
+            .from('invoices')
+            .insert(invoiceData)
+            .select()
+            .single();
+
+          if (invoiceError) throw invoiceError;
+          invoice = newInvoice;
+        }
+
+        // Create invoice items
+        const items = data.items.map(item => ({
+          invoice_id: invoice.id,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          amount: item.quantity * item.unitPrice
+        }));
+
+        const { error: itemsError } = await supabase
           .from('invoice_items')
-          .delete()
-          .eq('invoice_id', invoiceId);
-      } else {
-        // Create new invoice
-        const { data: newInvoice, error: invoiceError } = await supabase
-          .from('invoices')
-          .insert(invoiceData)
-          .select()
-          .single();
+          .insert(items);
 
-        if (invoiceError) throw invoiceError;
-        invoice = newInvoice;
+        if (itemsError) throw itemsError;
+
+        return invoice;
+      } catch (error) {
+        throw error;
+      } finally {
+        setIsSubmitting(false);
       }
-
-      // Create invoice items
-      const items = data.items.map(item => ({
-        invoice_id: invoice.id,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        amount: item.quantity * item.unitPrice
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(items);
-
-      if (itemsError) throw itemsError;
-
-      return invoice;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       if (invoiceId) {
         queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
       }
-      navigate('/invoices');
+      toast({
+        title: 'Success',
+        description: invoiceId ? 'Invoice updated successfully' : 'Invoice created successfully',
+        type: 'success',
+      });
+      navigate('/dashboard/invoices');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save invoice',
+        type: 'error',
+      });
     }
   });
 
   const onSubmit = async (data: InvoiceFormData) => {
-    setIsSubmitting(true);
     try {
       await createInvoiceMutation.mutateAsync(data);
     } catch (error) {
       console.error('Failed to create invoice:', error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -513,17 +530,27 @@ export default function CreateInvoice() {
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/invoices')}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                disabled={isSubmitting}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="h-4 w-4 mr-2" />
-                {invoiceId ? 'Update Invoice' : 'Save as Draft'}
+                {isSubmitting ? (
+                  <>
+                    <span className="inline-block animate-spin mr-2">⌛</span>
+                    {invoiceId ? 'Updating...' : 'Saving...'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {invoiceId ? 'Update Invoice' : 'Save as Draft'}
+                  </>
+                )}
               </button>
               <button
                 type="button"
@@ -531,7 +558,7 @@ export default function CreateInvoice() {
                 onClick={() => {
                   // TODO: Implement send functionality
                 }}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="h-4 w-4 mr-2" />
                 Save & Send
