@@ -171,13 +171,13 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-center mb-12">
             Perfect For Trade and Service Businesses
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-8 text-center text-gray-600">
+          <div className="grid grid-cols-4 lg:grid-cols-8 gap-4 lg:gap-8 text-center text-gray-600">
             {tradeBusinesses.map((business) => (
               <div key={business.name} className="flex flex-col items-center">
-                <div className="w-16 h-16 bg-blue-50 rounded-full mb-3 flex items-center justify-center text-blue-600">
-                  <business.icon className="h-8 w-8" />
+                <div className="w-12 h-12 lg:w-16 lg:h-16 bg-blue-50 rounded-full mb-2 lg:mb-3 flex items-center justify-center text-blue-600">
+                  <business.icon className="h-6 w-6 lg:h-8 lg:w-8" />
                 </div>
-                <span className="text-sm">{business.name}</span>
+                <span className="text-xs lg:text-sm">{business.name}</span>
               </div>
             ))}
           </div>
