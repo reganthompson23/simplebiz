@@ -85,7 +85,7 @@ export default function InvoiceList() {
               <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
             </div>
             <button
-              onClick={() => navigate('/invoices/new')}
+              onClick={() => navigate('/dashboard/invoices/new')}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -153,13 +153,13 @@ export default function InvoiceList() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button
-                      onClick={() => navigate(`/invoices/${invoice.id}`)}
+                      onClick={() => navigate(`/dashboard/invoices/${invoice.id}`)}
                       className="text-blue-600 hover:text-blue-900"
                     >
                       <Eye className="h-4 w-4 inline" />
                     </button>
                     <button
-                      onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
+                      onClick={() => navigate(`/dashboard/invoices/${invoice.id}/edit`)}
                       className="text-gray-600 hover:text-gray-900"
                     >
                       <Pencil className="h-4 w-4 inline" />
