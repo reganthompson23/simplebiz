@@ -3,15 +3,12 @@ import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/rendere
 import { Invoice, InvoiceItem } from '../../types';
 import { formatCurrency } from '../../lib/utils';
 
-// Register fonts
+// Register fonts using a more reliable system font
 Font.register({
-  family: 'Inter',
+  family: 'Helvetica',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeAmM.woff2' },
-    { 
-      src: 'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZ9hiJ-Ek-_EeAmM.woff2',
-      fontWeight: 'bold'
-    }
+    { src: 'Helvetica' },
+    { src: 'Helvetica-Bold', fontWeight: 'bold' }
   ]
 });
 
@@ -21,7 +18,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
     padding: 40,
-    fontFamily: 'Inter'
+    fontFamily: 'Helvetica'
   },
   header: {
     flexDirection: 'row',
@@ -29,12 +26,13 @@ const styles = StyleSheet.create({
     marginBottom: 40
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#111827'
+    color: '#111827',
+    marginBottom: 4
   },
   invoiceNumber: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#6B7280'
   },
   section: {
@@ -42,7 +40,8 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    marginBottom: 20
   },
   column: {
     flexDirection: 'column',
@@ -52,17 +51,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 10,
     color: '#6B7280',
-    marginBottom: 4
+    marginBottom: 4,
+    textTransform: 'uppercase'
   },
   value: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#111827',
     marginBottom: 8
   },
   table: {
     flexDirection: 'column',
-    marginTop: 20,
-    marginBottom: 20
+    marginTop: 30,
+    marginBottom: 30
   },
   tableHeader: {
     flexDirection: 'row',
@@ -74,7 +74,8 @@ const styles = StyleSheet.create({
   tableHeaderCell: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#6B7280'
+    color: '#6B7280',
+    textTransform: 'uppercase'
   },
   tableRow: {
     flexDirection: 'row',
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     textAlign: 'right'
   },
   grandTotal: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#111827'
   },
