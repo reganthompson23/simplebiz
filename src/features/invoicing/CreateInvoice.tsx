@@ -33,6 +33,7 @@ interface InvoiceFormData {
   }[];
   notes?: string;
   terms?: string;
+  status?: string;
 }
 
 export default function CreateInvoice() {
@@ -97,7 +98,8 @@ export default function CreateInvoice() {
           unitPrice: item.unit_price
         })),
         notes: existingInvoice.notes,
-        terms: existingInvoice.terms
+        terms: existingInvoice.terms,
+        status: existingInvoice.status
       });
 
       setDiscountType(existingInvoice.discount_type);
@@ -165,7 +167,7 @@ export default function CreateInvoice() {
           total,
           notes: data.notes,
           terms: data.terms,
-          status: 'draft'
+          status: data.status
         };
 
         let invoice;
@@ -357,15 +359,20 @@ export default function CreateInvoice() {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Payment Terms</label>
-                <input
-                  type="text"
-                  {...register('paymentTerms')}
-                  placeholder="e.g. Net 30"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
-                />
-              </div>
+              {invoiceId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <select
+                    {...register('status')}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 bg-gray-50 px-3"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="sent">Sent</option>
+                    <option value="paid">Paid</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Line Items */}
