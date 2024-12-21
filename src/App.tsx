@@ -13,6 +13,7 @@ import ExpenseForm from './features/expenses/ExpenseForm';
 import ScheduleList from './features/schedule/ScheduleList';
 import ScheduleForm from './features/schedule/ScheduleForm';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import ViewInvoice from './features/invoicing/ViewInvoice';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,7 @@ function App() {
             <Route path="website" element={<WebsiteBuilder />} />
             <Route path="invoices" element={<InvoiceList />} />
             <Route path="invoices/new" element={<CreateInvoice />} />
+            <Route path="invoices/:id" element={<ViewInvoice />} />
             <Route path="invoices/:id/edit" element={<CreateInvoice />} />
             <Route path="inquiries" element={<LeadsList />} />
             <Route path="expenses" element={<ExpenseList />} />
