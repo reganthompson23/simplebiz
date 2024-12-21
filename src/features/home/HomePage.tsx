@@ -34,27 +34,27 @@ export default function HomePage() {
     {
       icon: LayoutGrid,
       title: 'Website Builder',
-      description: 'Build and maintain your professional business website without any technical knowledge.'
-    },
-    {
-      icon: Users,
-      title: 'Lead Management',
-      description: 'Never miss a potential client with our organized inquiry tracking system.'
+      description: 'Create your website in seconds with zero technical knowledge. The simplest website builder on the internet.'
     },
     {
       icon: FileText,
       title: 'Invoice Generation',
-      description: 'Create and manage professional invoices for your clients in seconds.'
+      description: 'Create and send professional invoices with our easy to use invoice generator.'
+    },
+    {
+      icon: Users,
+      title: 'Lead Management',
+      description: 'Inquiries made through your website show up in an inbox format ensuring you never miss a potential customer.'
     },
     {
       icon: Calendar,
       title: 'Schedule Management',
-      description: 'Easily manage your appointments and jobs with our intuitive scheduling system.'
+      description: 'Schedule your jobs as you book them.'
     },
     {
       icon: DollarSign,
       title: 'Expense Tracking',
-      description: 'Keep track of all your business expenses with categorization and reporting.'
+      description: 'Easily track every cent you spend as you go and we promise you\'ll thank us come tax time.'
     }
   ];
 
