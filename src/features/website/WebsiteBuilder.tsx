@@ -204,8 +204,8 @@ export default function WebsiteBuilder() {
 
   const content = website?.content || defaultContent;
   const previewSubdomain = generateSubdomain(content.businessName);
-  const baseUrl = 'https://simplebizsites.netlify.app';
-  const websiteUrl = `${baseUrl}/sites/${previewSubdomain}`;
+  const baseUrl = 'https://litebiz.co';
+  const websiteUrl = `${baseUrl}/${previewSubdomain}`;
 
   // Helper component for input fields with save button
   const FieldWithSave = ({ 
