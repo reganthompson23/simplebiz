@@ -397,7 +397,10 @@ export default function WebsiteBuilder() {
       </div>
 
       {previewMode ? (
-        <WebsitePreview content={content} />
+        <WebsitePreview 
+          content={content} 
+          profileId={user.id}
+        />
       ) : (
         <div className="px-2">
           <Card>

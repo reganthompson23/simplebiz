@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { WebsiteContent } from './types';
+import { supabase } from '../../lib/supabase';
 
 interface WebsitePreviewProps {
   content: WebsiteContent;
+  profileId: string;
 }
 
 interface FormData {
@@ -12,46 +14,17 @@ interface FormData {
   message: string;
 }
 
-interface FormErrors {
-  name?: string;
-  email?: string;
-  phone?: string;
-  message?: string;
-}
-
-export default function WebsitePreview({ content }: WebsitePreviewProps) {
-  const [formData, setFormData] = React.useState<FormData>({
+export default function WebsitePreview({ content, profileId }: WebsitePreviewProps) {
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     phone: '',
     message: ''
   });
-  const [formErrors, setFormErrors] = React.useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  const validateForm = (): boolean => {
-    const errors: FormErrors = {};
-    
-    // Name validation
-    if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-    }
-
-    // Email validation
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
-      errors.email = 'Invalid email address';
-    }
-
-    // Phone validation (optional)
-    if (formData.phone && !/^[0-9+\-\s()]*$/.test(formData.phone)) {
-      errors.phone = 'Invalid phone number';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -60,11 +33,76 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
       [name]: value
     }));
     // Clear error when user types
-    if (formErrors[name as keyof FormErrors]) {
-      setFormErrors(prev => ({
+    if (errors[name]) {
+      setErrors(prev => ({
         ...prev,
-        [name]: undefined
+        [name]: ''
       }));
+    }
+    // Clear success/error messages when user starts typing again
+    setSubmitSuccess(false);
+    setSubmitError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Reset states
+    setErrors({});
+    setSubmitError(null);
+    setSubmitSuccess(false);
+    
+    // Validate form
+    const newErrors: Record<string, string> = {};
+    if (leadForm.fields.name && !formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    if (leadForm.fields.email && !formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (leadForm.fields.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+    if (leadForm.fields.phone && !formData.phone.trim()) {
+      newErrors.phone = 'Phone is required';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .insert([
+          {
+            profile_id: profileId,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            notes: formData.message,
+            source: window.location.hostname,
+            status: 'new'
+          }
+        ]);
+
+      if (error) throw error;
+
+      // Clear form on success
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+      });
+      setSubmitSuccess(true);
+    } catch (error: any) {
+      console.error('Error submitting lead:', error);
+      setSubmitError('Failed to submit form. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -188,7 +226,17 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
             {leadForm.enabled && (
               <div>
                 <h3 className="text-xl font-semibold mb-4">Send us a Message</h3>
-                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                  {submitSuccess && (
+                    <div className="p-4 rounded-md bg-green-50 text-green-800">
+                      Thank you for your message! We'll get back to you soon.
+                    </div>
+                  )}
+                  {submitError && (
+                    <div className="p-4 rounded-md bg-red-50 text-red-800">
+                      {submitError}
+                    </div>
+                  )}
                   {leadForm.fields.name && (
                     <div>
                       <label className="block text-sm font-medium mb-1">
@@ -199,10 +247,12 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-md ${formErrors.name ? 'border-red-500' : ''}`}
+                        className={`w-full p-2 border rounded-md ${
+                          errors.name ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
-                      {formErrors.name && (
-                        <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+                      {errors.name && (
+                        <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                       )}
                     </div>
                   )}
@@ -216,10 +266,12 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-md ${formErrors.email ? 'border-red-500' : ''}`}
+                        className={`w-full p-2 border rounded-md ${
+                          errors.email ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
-                      {formErrors.email && (
-                        <p className="mt-1 text-sm text-red-500">{formErrors.email}</p>
+                      {errors.email && (
+                        <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                       )}
                     </div>
                   )}
@@ -233,10 +285,12 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-md ${formErrors.phone ? 'border-red-500' : ''}`}
+                        className={`w-full p-2 border rounded-md ${
+                          errors.phone ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
-                      {formErrors.phone && (
-                        <p className="mt-1 text-sm text-red-500">{formErrors.phone}</p>
+                      {errors.phone && (
+                        <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
                       )}
                     </div>
                   )}
@@ -249,20 +303,16 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
                         name="message"
                         value={formData.message}
                         onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-md ${formErrors.message ? 'border-red-500' : ''}`}
                         rows={4}
+                        className="w-full p-2 border border-gray-300 rounded-md"
                       />
-                      {formErrors.message && (
-                        <p className="mt-1 text-sm text-red-500">{formErrors.message}</p>
-                      )}
                     </div>
                   )}
                   <button
-                    type="button"
-                    onClick={validateForm}
-                    className="w-full py-2 px-4 text-white rounded-md"
-                    style={{ backgroundColor: theme.primaryColor }}
+                    type="submit"
+                    className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
+                    style={{ backgroundColor: theme.primaryColor }}
                   >
                     {isSubmitting ? 'Sending...' : 'Send Message'}
                   </button>
