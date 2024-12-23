@@ -177,24 +177,23 @@ export default function WebsiteBuilder() {
       if (!website) throw new Error('No website to publish');
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('websites')
         .update({ 
           published: true,
           updated_at: new Date().toISOString()
         })
         .eq('id', website.id)
-        .eq('profile_id', user.id);
+        .eq('profile_id', user.id)
+        .select()
+        .single();
       
       if (error) throw error;
-      return { published: true };
+      return data;
     },
     onSuccess: (data) => {
-      // Update the website data in the cache
-      queryClient.setQueryData(['website'], (oldData: any) => ({
-        ...oldData,
-        published: data.published
-      }));
+      // Update the website data in the cache with the full response
+      queryClient.setQueryData(['website'], data);
       
       toast({
         title: 'Success',
@@ -203,9 +202,10 @@ export default function WebsiteBuilder() {
       });
     },
     onError: (error: Error) => {
+      console.error('Publish error:', error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: 'Failed to publish website. Please try again.',
         type: 'error',
       });
     },
