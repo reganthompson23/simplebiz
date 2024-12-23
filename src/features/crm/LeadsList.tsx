@@ -184,22 +184,34 @@ export default function LeadsList() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            updateLeadStatus.mutate({ 
-                              leadId: lead.id, 
-                              status: e.target.value 
-                            });
-                          }}
-                          className="text-sm border-gray-300 rounded-md"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {Object.entries(LEAD_STATUSES).map(([value, { label }]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
-                        </select>
+                        <div className="relative inline-block">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const select = e.currentTarget.nextElementSibling as HTMLSelectElement;
+                              select?.click();
+                            }}
+                            className={`px-2 py-1 rounded-full text-xs font-semibold ${LEAD_STATUSES[lead.status as keyof typeof LEAD_STATUSES]?.color}`}
+                          >
+                            {LEAD_STATUSES[lead.status as keyof typeof LEAD_STATUSES]?.label}
+                          </button>
+                          <select
+                            value={lead.status}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              updateLeadStatus.mutate({ 
+                                leadId: lead.id, 
+                                status: e.target.value 
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          >
+                            {Object.entries(LEAD_STATUSES).map(([value, { label }]) => (
+                              <option key={value} value={value}>{label}</option>
+                            ))}
+                          </select>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {lead.source || 'Direct'}
