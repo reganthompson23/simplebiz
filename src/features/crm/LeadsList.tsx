@@ -2,20 +2,20 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Lead } from '../../types';
-import { Users, Plus, Filter, Eye, MessageCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Filter, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { toast } from '../../components/ui/Toast';
 
 const LEAD_STATUSES = {
-  new: { label: 'New', color: 'bg-green-100 text-green-800' },
-  contacted: { label: 'Contacted', color: 'bg-blue-100 text-blue-800' },
-  converted: { label: 'Converted', color: 'bg-purple-100 text-purple-800' },
+  open: { label: 'Open', color: 'bg-green-100 text-green-800' },
+  closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800' },
   lost: { label: 'Lost', color: 'bg-red-100 text-red-800' }
 };
 
 export default function LeadsList() {
   const queryClient = useQueryClient();
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const { data: leads, isLoading } = useQuery({
     queryKey: ['leads'],
@@ -65,6 +65,33 @@ export default function LeadsList() {
     },
   });
 
+  const deleteLead = useMutation({
+    mutationFn: async (leadId: string) => {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', leadId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      setSelectedLead(null);
+      toast({
+        title: 'Success',
+        description: 'Lead deleted successfully',
+        type: 'success',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete lead',
+        type: 'error',
+      });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto py-8 px-4">
@@ -102,13 +129,6 @@ export default function LeadsList() {
                 </select>
               </div>
             </div>
-            <Button
-              onClick={() => {/* TODO: Implement manual lead creation */}}
-              className="inline-flex items-center"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Lead
-            </Button>
           </div>
         </div>
 
@@ -149,73 +169,88 @@ export default function LeadsList() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {leads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{lead.email}</div>
-                      {lead.phone && (
-                        <div className="text-sm text-gray-500">{lead.phone}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                        ${LEAD_STATUSES[lead.status as keyof typeof LEAD_STATUSES]?.color || 'bg-gray-100 text-gray-800'}`}>
-                        {LEAD_STATUSES[lead.status as keyof typeof LEAD_STATUSES]?.label || lead.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {lead.source || 'Direct'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(lead.created_at).toLocaleDateString('en-AU', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {/* TODO: View lead details */}}
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4 text-gray-500" />
-                      </Button>
-                      {lead.status === 'new' && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateLeadStatus.mutate({ leadId: lead.id, status: 'contacted' })}
-                            title="Mark as Contacted"
-                          >
-                            <MessageCircle className="h-4 w-4 text-blue-500" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateLeadStatus.mutate({ leadId: lead.id, status: 'converted' })}
-                            title="Mark as Converted"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateLeadStatus.mutate({ leadId: lead.id, status: 'lost' })}
-                            title="Mark as Lost"
-                          >
-                            <XCircle className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
+                  <React.Fragment key={lead.id}>
+                    <tr 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setSelectedLead(selectedLead?.id === lead.id ? null : lead)}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{lead.email}</div>
+                        {lead.phone && (
+                          <div className="text-sm text-gray-500">{lead.phone}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={lead.status}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            updateLeadStatus.mutate({ 
+                              leadId: lead.id, 
+                              status: e.target.value 
+                            });
+                          }}
+                          className="text-sm border-gray-300 rounded-md"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {Object.entries(LEAD_STATUSES).map(([value, { label }]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {lead.source || 'Direct'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(lead.created_at).toLocaleDateString('en-AU', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Are you sure you want to delete this lead?')) {
+                              deleteLead.mutate(lead.id);
+                            }
+                          }}
+                          title="Delete Lead"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </td>
+                    </tr>
+                    {selectedLead?.id === lead.id && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-4 bg-gray-50">
+                          <div className="space-y-4">
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-900">Notes</h3>
+                              <p className="mt-1 text-sm text-gray-600">{lead.notes || 'No notes'}</p>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              <p>Last updated: {new Date(lead.updated_at).toLocaleDateString('en-AU', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}</p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

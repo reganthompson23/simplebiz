@@ -14,7 +14,7 @@ export interface Lead {
   name: string;
   email: string;
   phone?: string;
-  status: 'new' | 'contacted' | 'converted' | 'lost';
+  status: 'open' | 'closed' | 'lost';
   notes?: string;
   source?: string;
   created_at: string;
