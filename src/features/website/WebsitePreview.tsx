@@ -5,7 +5,69 @@ interface WebsitePreviewProps {
   content: WebsiteContent;
 }
 
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+  message?: string;
+}
+
 export default function WebsitePreview({ content }: WebsitePreviewProps) {
+  const [formData, setFormData] = React.useState<FormData>({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+  const [formErrors, setFormErrors] = React.useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
+      errors.email = 'Invalid email address';
+    }
+
+    // Phone validation (optional)
+    if (formData.phone && !/^[0-9+\-\s()]*$/.test(formData.phone)) {
+      errors.phone = 'Invalid phone number';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user types
+    if (formErrors[name as keyof FormErrors]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
+  };
+
   const {
     businessName = '',
     aboutUs = '',
@@ -126,7 +188,7 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
             {leadForm.enabled && (
               <div>
                 <h3 className="text-xl font-semibold mb-4">Send us a Message</h3>
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                   {leadForm.fields.name && (
                     <div>
                       <label className="block text-sm font-medium mb-1">
@@ -134,9 +196,14 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
                       </label>
                       <input
                         type="text"
-                        className="w-full px-3 py-2 border rounded-md"
-                        disabled
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border rounded-md ${formErrors.name ? 'border-red-500' : ''}`}
                       />
+                      {formErrors.name && (
+                        <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+                      )}
                     </div>
                   )}
                   {leadForm.fields.email && (
@@ -146,9 +213,14 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
                       </label>
                       <input
                         type="email"
-                        className="w-full px-3 py-2 border rounded-md"
-                        disabled
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border rounded-md ${formErrors.email ? 'border-red-500' : ''}`}
                       />
+                      {formErrors.email && (
+                        <p className="mt-1 text-sm text-red-500">{formErrors.email}</p>
+                      )}
                     </div>
                   )}
                   {leadForm.fields.phone && (
@@ -158,9 +230,14 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
                       </label>
                       <input
                         type="tel"
-                        className="w-full px-3 py-2 border rounded-md"
-                        disabled
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border rounded-md ${formErrors.phone ? 'border-red-500' : ''}`}
                       />
+                      {formErrors.phone && (
+                        <p className="mt-1 text-sm text-red-500">{formErrors.phone}</p>
+                      )}
                     </div>
                   )}
                   {leadForm.fields.message && (
@@ -169,19 +246,25 @@ export default function WebsitePreview({ content }: WebsitePreviewProps) {
                         Message
                       </label>
                       <textarea
-                        className="w-full px-3 py-2 border rounded-md"
+                        name="message"
+                        value={formData.message}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border rounded-md ${formErrors.message ? 'border-red-500' : ''}`}
                         rows={4}
-                        disabled
                       />
+                      {formErrors.message && (
+                        <p className="mt-1 text-sm text-red-500">{formErrors.message}</p>
+                      )}
                     </div>
                   )}
                   <button
                     type="button"
+                    onClick={validateForm}
                     className="w-full py-2 px-4 text-white rounded-md"
                     style={{ backgroundColor: theme.primaryColor }}
-                    disabled
+                    disabled={isSubmitting}
                   >
-                    Send Message
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
                   </button>
                 </form>
               </div>
