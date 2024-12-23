@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Lead } from '../../types';
-import { Users, Filter, Trash2 } from 'lucide-react';
+import { Users, Filter, Trash2, ChevronDown } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { toast } from '../../components/ui/Toast';
 
@@ -191,9 +191,10 @@ export default function LeadsList() {
                               const select = e.currentTarget.nextElementSibling as HTMLSelectElement;
                               select?.click();
                             }}
-                            className={`px-2 py-1 rounded-full text-xs font-semibold ${LEAD_STATUSES[lead.status as keyof typeof LEAD_STATUSES]?.color}`}
+                            className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${LEAD_STATUSES[lead.status as keyof typeof LEAD_STATUSES]?.color}`}
                           >
                             {LEAD_STATUSES[lead.status as keyof typeof LEAD_STATUSES]?.label}
+                            <ChevronDown className="h-3 w-3" />
                           </button>
                           <select
                             value={lead.status}
