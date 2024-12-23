@@ -21,6 +21,13 @@ function generateSubdomain(businessName: string | undefined): string {
     .slice(0, 63);
 }
 
+function generatePath(businessName: string | undefined): string {
+  if (!businessName) return '';
+  return businessName
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
 export default function WebsiteBuilder() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -103,6 +110,18 @@ export default function WebsiteBuilder() {
   const handleSaveField = async (path: string[], value: any) => {
     try {
       await updateField(path, value);
+      
+      // If the business name is being updated, also update the website path
+      if (path[0] === 'businessName' && website?.id) {
+        const websitePath = generatePath(value);
+        const { error: pathError } = await supabase
+          .from('websites')
+          .update({ path: websitePath })
+          .eq('id', website.id);
+          
+        if (pathError) throw pathError;
+      }
+      
       // Refetch the website data to ensure we have the latest state
       await queryClient.invalidateQueries({ queryKey: ['website'] });
       toast({
@@ -204,8 +223,9 @@ export default function WebsiteBuilder() {
 
   const content = website?.content || defaultContent;
   const previewSubdomain = generateSubdomain(content.businessName);
+  const websitePath = generatePath(content.businessName);
   const baseUrl = 'https://litebiz.co';
-  const websiteUrl = `${baseUrl}/${previewSubdomain}`;
+  const websiteUrl = `${baseUrl}/${websitePath}`;
 
   // Helper component for input fields with save button
   const FieldWithSave = ({ 
