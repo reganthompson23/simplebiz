@@ -187,9 +187,15 @@ export default function WebsiteBuilder() {
         .eq('profile_id', user.id);
       
       if (error) throw error;
+      return { published: true };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['website'] });
+    onSuccess: (data) => {
+      // Update the website data in the cache
+      queryClient.setQueryData(['website'], (oldData: any) => ({
+        ...oldData,
+        published: data.published
+      }));
+      
       toast({
         title: 'Success',
         description: 'Your website has been published and is now live.',
