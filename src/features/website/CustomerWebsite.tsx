@@ -7,12 +7,23 @@ import WebsitePreview from './WebsitePreview';
 export default function CustomerWebsite() {
   const { businessPath } = useParams();
   
-  console.log('Attempting to load website with path:', businessPath);
+  // Add error boundary state
+  const [hasError, setHasError] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState('');
   
+  React.useEffect(() => {
+    console.log('CustomerWebsite mounted with path:', businessPath);
+    return () => console.log('CustomerWebsite unmounted');
+  }, [businessPath]);
+
   const { data: website, isLoading, error } = useQuery({
     queryKey: ['customer-website', businessPath],
     queryFn: async () => {
-      console.log('Fetching website data from Supabase...');
+      if (!businessPath) {
+        throw new Error('No business path provided');
+      }
+
+      console.log('Fetching website data for path:', businessPath);
       const { data, error } = await supabase
         .from('websites')
         .select('*, profiles(id)')
@@ -22,44 +33,73 @@ export default function CustomerWebsite() {
 
       if (error) {
         console.error('Supabase error:', error);
+        setErrorMessage(error.message);
         throw error;
       }
-      console.log('Website data:', data);
+
+      if (!data) {
+        console.error('No website found for path:', businessPath);
+        throw new Error('Website not found');
+      }
+
+      console.log('Website data found:', data);
       return data;
     },
+    retry: 1,
+    onError: (err) => {
+      console.error('Query error:', err);
+      setHasError(true);
+      setErrorMessage(err.message);
+    }
   });
 
   if (isLoading) {
-    console.log('Loading website...');
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Loading...</div>
+        <div className="animate-pulse text-gray-500">Loading website...</div>
       </div>
     );
   }
 
-  if (error || !website) {
-    console.error('Error or no website found:', error);
+  if (hasError || error || !website) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Page Not Found</h1>
-        <p className="text-gray-600 mb-8">We can't seem to find the page you're looking for.</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Website Not Found</h1>
+        <p className="text-gray-600 mb-4">We couldn't find a website at this address.</p>
         <p className="text-sm text-gray-500 mb-4">Path: {businessPath}</p>
+        {errorMessage && (
+          <p className="text-sm text-red-500 mb-4">Error: {errorMessage}</p>
+        )}
         <a 
           href="/"
           className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
         >
-          GO TO HOME PAGE
+          Return Home
         </a>
       </div>
     );
   }
 
-  console.log('Rendering website:', website);
-  return (
-    <WebsitePreview 
-      content={website.content} 
-      profileId={website.profiles.id}
-    />
-  );
+  try {
+    return (
+      <WebsitePreview 
+        content={website.content} 
+        profileId={website.profiles.id}
+      />
+    );
+  } catch (err) {
+    console.error('Render error:', err);
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Something Went Wrong</h1>
+        <p className="text-gray-600 mb-8">We encountered an error while displaying this website.</p>
+        <a 
+          href="/"
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Return Home
+        </a>
+      </div>
+    );
+  }
 } 
