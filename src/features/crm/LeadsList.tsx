@@ -7,8 +7,8 @@ import { Button } from '../../components/ui/Button';
 import { toast } from '../../components/ui/Toast';
 
 const LEAD_STATUSES = {
-  open: { label: 'Open', color: 'bg-green-100 text-green-800' },
-  closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800' },
+  open: { label: 'Open', color: 'bg-blue-100 text-blue-800' },
+  closed: { label: 'Closed', color: 'bg-green-100 text-green-800' },
   lost: { label: 'Lost', color: 'bg-red-100 text-red-800' }
 };
 
@@ -18,15 +18,15 @@ export default function LeadsList() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const { data: leads, isLoading } = useQuery({
-    queryKey: ['leads'],
+    queryKey: ['leads', selectedStatus],
     queryFn: async () => {
-      const query = supabase
+      let query = supabase
         .from('leads')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (selectedStatus) {
-        query.eq('status', selectedStatus);
+        query = query.eq('status', selectedStatus);
       }
 
       const { data, error } = await query;
