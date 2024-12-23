@@ -10,13 +10,15 @@ export interface User {
 
 export interface Lead {
   id: string;
-  userId: string;
+  profile_id: string;
   name: string;
   email: string;
   phone?: string;
-  status: 'new' | 'in_progress' | 'converted' | 'lost';
+  status: 'new' | 'contacted' | 'converted' | 'lost';
   notes?: string;
-  createdAt: string;
+  source?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Invoice {
