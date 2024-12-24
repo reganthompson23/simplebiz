@@ -6,14 +6,24 @@ import type { User } from '../types';
 
 export function useAuth() {
   const navigate = useNavigate();
-  const { user, setUser, isInitialized, setIsInitialized } = useAuthStore();
+  const { user, setUser, isInitialized, setIsInitialized, cleanup } = useAuthStore();
   const isInitializing = useRef(false);
+
+  // Handle page refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // This will run when the page is about to refresh
+      cleanup();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [cleanup]);
 
   useEffect(() => {
     let mounted = true;
     console.log('=== useAuth Effect Start ===');
     console.log('Current user state:', user?.id);
-    console.log('Is initialized:', isInitialized);
 
     // Function to fetch and set user profile
     const fetchAndSetUserProfile = async (userId: string) => {
@@ -55,19 +65,6 @@ export function useAuth() {
       console.log('Starting auth initialization...');
       
       try {
-        // First check if we have a persisted user
-        if (user?.id) {
-          console.log('Found persisted user, validating session...');
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (session?.user?.id === user.id) {
-            console.log('Persisted user matches session, skipping initialization');
-            setIsInitialized(true);
-            isInitializing.current = false;
-            return;
-          }
-        }
-
         console.log('Getting session from Supabase...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
