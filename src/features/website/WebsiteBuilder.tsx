@@ -48,6 +48,7 @@ export default function WebsiteBuilder() {
           content: defaultContent,
           published: false,
           path: '',
+          subdomain: '',
         })
         .select()
         .single();
