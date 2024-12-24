@@ -1,11 +1,12 @@
 export interface User {
   id: string;
-  email: string;
-  businessName: string;
-  businessAddress?: string;
-  phone?: string;
+  contact_email: string;
+  business_name: string;
+  contact_phone?: string;
+  address?: string;
   abn?: string;
-  createdAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Lead {

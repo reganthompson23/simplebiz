@@ -54,7 +54,7 @@ export default function LoginForm() {
               {
                 id: signUpData.user.id,
                 business_name: data.business_name || '',
-                email: data.email,
+                contact_email: data.email,
               }
             ]);
 
