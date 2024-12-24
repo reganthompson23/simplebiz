@@ -15,13 +15,39 @@ export function useAuth() {
     const fetchAndSetUserProfile = async (userId: string) => {
       try {
         console.log('Fetching user profile for:', userId);
+        const { data: sessionData } = await supabase.auth.getSession();
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .single();
 
-        if (error) {
+        if (error && error.code === 'PGRST116') {
+          // Profile not found, create one
+          console.log('Profile not found, creating new profile');
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: userId,
+                business_name: sessionData.session?.user?.user_metadata?.business_name || '',
+                contact_email: sessionData.session?.user?.email || '',
+              }
+            ])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            throw createError;
+          }
+
+          if (newProfile && mounted) {
+            console.log('Setting new user profile:', newProfile);
+            setUser(newProfile as User);
+            return;
+          }
+        } else if (error) {
           console.error('Error fetching profile:', error);
           throw error;
         }

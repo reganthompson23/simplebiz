@@ -48,18 +48,33 @@ export default function LoginForm() {
         // Create profile after successful signup
         if (signUpData.user) {
           console.log('Creating user profile...');
-          const { error: profileError } = await supabase
+          const { data: existingProfile } = await supabase
             .from('profiles')
-            .insert([
-              {
-                id: signUpData.user.id,
-                business_name: data.business_name || '',
-                contact_email: data.email,
-              }
-            ]);
+            .select('id')
+            .eq('id', signUpData.user.id)
+            .single();
 
-          if (profileError) throw profileError;
-          console.log('Profile created successfully');
+          if (!existingProfile) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert([
+                {
+                  id: signUpData.user.id,
+                  business_name: data.business_name || '',
+                  contact_email: data.email,
+                }
+              ])
+              .select()
+              .single();
+
+            if (profileError) {
+              console.error('Profile creation error:', profileError);
+              throw profileError;
+            }
+            console.log('Profile created successfully');
+          } else {
+            console.log('Profile already exists');
+          }
           
           // Let the auth state change listener handle navigation
           return;
