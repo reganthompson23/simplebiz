@@ -76,40 +76,27 @@ export default function WebsiteBuilder() {
       
       console.log('Fetching website for user:', user.id);
       
-      // Try both profile_id and profileId
-      const { data: dataByProfileId, error: errorByProfileId } = await supabase
+      // Only try profile_id since that's our standard column name
+      const { data, error } = await supabase
         .from('websites')
         .select('*')
         .eq('profile_id', user.id)
         .single();
       
-      if (!errorByProfileId && dataByProfileId) {
-        console.log('Found website by profile_id:', dataByProfileId);
-        return dataByProfileId as Website;
-      }
-      
-      const { data: dataByProfileID, error: errorByProfileID } = await supabase
-        .from('websites')
-        .select('*')
-        .eq('profileId', user.id)
-        .single();
-        
-      if (!errorByProfileID && dataByProfileID) {
-        console.log('Found website by profileId:', dataByProfileID);
-        return dataByProfileID as Website;
-      }
-      
-      // If no website found with either field, create one
-      if (errorByProfileId?.code === 'PGRST116' && errorByProfileID?.code === 'PGRST116') {
+      // If no website found, create one
+      if (error?.code === 'PGRST116') {
         console.log('No website found, creating new one');
         return createWebsite.mutateAsync();
       }
       
       // If there was a different error, throw it
-      if (errorByProfileId && errorByProfileId.code !== 'PGRST116') throw errorByProfileId;
-      if (errorByProfileID && errorByProfileID.code !== 'PGRST116') throw errorByProfileID;
+      if (error) {
+        console.error('Error fetching website:', error);
+        throw error;
+      }
       
-      return null;
+      console.log('Found existing website:', data);
+      return data as Website;
     },
     enabled: !!user?.id,
   });
