@@ -41,6 +41,8 @@ export function useAuth() {
         console.error('❌ Error in fetchAndSetUserProfile:', error);
         if (mounted) {
           setUser(null);
+          // Clear any stale session data
+          await supabase.auth.signOut();
           navigate('/login', { replace: true });
         }
       }
@@ -60,6 +62,17 @@ export function useAuth() {
 
         if (session?.user && mounted) {
           console.log('✅ Found existing session:', session.user.id);
+          // Verify the session is still valid
+          const { data: { user: currentUser }, error: refreshError } = await supabase.auth.getUser();
+          
+          if (refreshError || !currentUser) {
+            console.log('⚠️ Session expired, clearing...');
+            await supabase.auth.signOut();
+            setUser(null);
+            navigate('/login', { replace: true });
+            return;
+          }
+
           await fetchAndSetUserProfile(session.user.id);
           // Only navigate if we're not already on the dashboard
           if (!window.location.pathname.startsWith('/dashboard')) {
@@ -68,6 +81,8 @@ export function useAuth() {
         } else if (mounted) {
           console.log('ℹ️ No session found');
           setUser(null);
+          // Clear any stale session data
+          await supabase.auth.signOut();
           // Only navigate if we're not already on the login page
           if (window.location.pathname !== '/login') {
             navigate('/login', { replace: true });
@@ -77,6 +92,8 @@ export function useAuth() {
         console.error('❌ Error in initializeAuth:', error);
         if (mounted) {
           setUser(null);
+          // Clear any stale session data
+          await supabase.auth.signOut();
           navigate('/login', { replace: true });
         }
       }
@@ -102,15 +119,19 @@ export function useAuth() {
           if (!window.location.pathname.startsWith('/dashboard')) {
             navigate('/dashboard', { replace: true });
           }
-        } else if (event === 'SIGNED_OUT') {
-          console.log('👋 Processing SIGNED_OUT event');
+        } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          console.log('👋 Processing SIGNED_OUT/TOKEN_REFRESHED event');
           setUser(null);
-          navigate('/login', { replace: true });
+          if (event === 'SIGNED_OUT') {
+            navigate('/login', { replace: true });
+          }
         }
       } catch (error) {
         console.error('❌ Error in auth state change:', error);
         if (mounted) {
           setUser(null);
+          // Clear any stale session data
+          await supabase.auth.signOut();
           navigate('/login', { replace: true });
         }
       }
