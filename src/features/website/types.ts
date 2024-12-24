@@ -6,6 +6,7 @@ export interface WebsiteContent {
     phone: string;
     email: string;
     address: string;
+    [key: string]: string;
   };
   leadForm: {
     enabled: boolean;
@@ -14,6 +15,7 @@ export interface WebsiteContent {
       email: boolean;
       phone: boolean;
       message: boolean;
+      [key: string]: boolean;
     };
   };
   theme: {
@@ -22,7 +24,9 @@ export interface WebsiteContent {
     fontFamily: string;
     topImage: string;
     overlayOpacity: number;
+    [key: string]: string | number;
   };
+  [key: string]: any;
 }
 
 export interface Website {

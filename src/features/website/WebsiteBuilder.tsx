@@ -36,20 +36,80 @@ export default function WebsiteBuilder() {
   // Local state for field editing
   const [editingContent, setEditingContent] = React.useState<WebsiteContent>(defaultContent);
   
+  // Create website mutation
+  const createWebsite = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const { data, error } = await supabase
+        .from('websites')
+        .insert({
+          profile_id: user.id,
+          content: defaultContent,
+          published: false,
+          path: '',
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['website', user?.id], data);
+    },
+    onError: (error) => {
+      console.error('Failed to create website:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create website. Please try again.',
+        type: 'error',
+      });
+    },
+  });
+  
   // Load website data
   const { data: website, isLoading, error: websiteError } = useQuery({
-    queryKey: ['website'],
+    queryKey: ['website', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       
-      const { data, error } = await supabase
+      console.log('Fetching website for user:', user.id);
+      
+      // Try both profile_id and profileId
+      const { data: dataByProfileId, error: errorByProfileId } = await supabase
         .from('websites')
         .select('*')
         .eq('profile_id', user.id)
         .single();
       
-      if (error && error.code !== 'PGRST116') throw error;
-      return data as Website | null;
+      if (!errorByProfileId && dataByProfileId) {
+        console.log('Found website by profile_id:', dataByProfileId);
+        return dataByProfileId as Website;
+      }
+      
+      const { data: dataByProfileID, error: errorByProfileID } = await supabase
+        .from('websites')
+        .select('*')
+        .eq('profileId', user.id)
+        .single();
+        
+      if (!errorByProfileID && dataByProfileID) {
+        console.log('Found website by profileId:', dataByProfileID);
+        return dataByProfileID as Website;
+      }
+      
+      // If no website found with either field, create one
+      if (errorByProfileId?.code === 'PGRST116' && errorByProfileID?.code === 'PGRST116') {
+        console.log('No website found, creating new one');
+        return createWebsite.mutateAsync();
+      }
+      
+      // If there was a different error, throw it
+      if (errorByProfileId && errorByProfileId.code !== 'PGRST116') throw errorByProfileId;
+      if (errorByProfileID && errorByProfileID.code !== 'PGRST116') throw errorByProfileID;
+      
+      return null;
     },
     enabled: !!user?.id,
   });
@@ -57,6 +117,7 @@ export default function WebsiteBuilder() {
   // Update local state when website data loads
   React.useEffect(() => {
     if (website?.content) {
+      console.log('Setting editing content:', website.content);
       setEditingContent(website.content);
     }
   }, [website]);
