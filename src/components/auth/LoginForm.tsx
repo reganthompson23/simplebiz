@@ -27,11 +27,9 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
     setIsProcessing(true);
-    console.log('Attempting login with:', { email: data.email });
     
     try {
       if (isSignUp) {
-        // Sign up flow
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
@@ -57,33 +55,21 @@ export default function LoginForm() {
             ]);
 
           if (profileError) throw profileError;
-        }
-
-        // Wait for session to be established
-        const { data: session } = await supabase.auth.getSession();
-        if (session?.session) {
-          navigate('/dashboard');
+          
+          // Let the auth state change listener handle navigation
+          return;
         }
       } else {
         // Sign in flow
-        console.log('Starting sign in...');
-        const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         });
 
-        console.log('Sign in response:', { error: signInError, data: signInData });
-
         if (signInError) throw signInError;
-
-        // Wait for session to be established
-        const { data: sessionData } = await supabase.auth.getSession();
-        console.log('Session data:', sessionData);
-
-        if (signInData.session) {
-          console.log('Login successful, navigating to /dashboard');
-          navigate('/dashboard');
-        }
+        
+        // Let the auth state change listener handle navigation
+        return;
       }
     } catch (err: any) {
       console.error('Auth error:', err);
