@@ -14,6 +14,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isSessionChecked, setIsSessionChecked] = React.useState(false);
 
   React.useEffect(() => {
+    // Clean up old token if it exists
+    localStorage.removeItem('simplebiz_auth_token');
+    
     const checkSession = async () => {
       console.log('=== Protected Route Session Check ===');
       console.log('1. Starting session check...');
@@ -34,6 +37,16 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         
         console.log('4. Session result:', session ? 'Found' : 'Not found');
         console.log('5. User from useAuth:', user ? 'Present' : 'Not present');
+        
+        if (session && !user) {
+          console.log('6. Session exists but no user, refreshing auth state...');
+          // Force a refresh of the auth state
+          const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+          if (refreshedUser) {
+            // The useAuth hook will pick up this change
+            console.log('7. Successfully refreshed user state');
+          }
+        }
         
         // Only set loading to false after we've checked the session
         setIsSessionChecked(true);
