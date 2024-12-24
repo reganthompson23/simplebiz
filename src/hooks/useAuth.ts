@@ -50,7 +50,12 @@ export function useAuth() {
 
     // Initial session check
     const initializeAuth = async () => {
-      if (!mounted || isInitializing.current) return;
+      if (!mounted) return;
+      
+      if (isInitializing.current) {
+        console.log('Already initializing, skipping duplicate initialization');
+        return;
+      }
       
       isInitializing.current = true;
       console.log('Starting auth initialization...');
@@ -95,24 +100,15 @@ export function useAuth() {
         return;
       }
 
-      // For INITIAL_SESSION, let the initialization handle it
-      if (event === 'INITIAL_SESSION') {
-        console.log('Received INITIAL_SESSION event, waiting for initialization...');
-        if (!isInitialized && !isInitializing.current) {
-          await initializeAuth();
-        }
-        return;
-      }
-
-      // For other events, process them directly
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('Processing SIGNED_IN event for user:', session.user.id);
+      // Handle all session events
+      if (session?.user) {
+        console.log('Processing session event for user:', session.user.id);
         await fetchAndSetUserProfile(session.user.id);
         if (!isInitialized) {
           setIsInitialized(true);
         }
-      } else if (event === 'SIGNED_OUT') {
-        console.log('Processing SIGNED_OUT event');
+      } else {
+        console.log('No session in auth change event');
         setUser(null);
         if (!isInitialized) {
           setIsInitialized(true);
@@ -120,19 +116,21 @@ export function useAuth() {
       }
     });
 
-    // Start initialization
-    console.log('Starting auth initialization process...');
+    // Start initialization only if not already initialized
     if (!isInitialized && !isInitializing.current) {
+      console.log('Starting auth initialization process...');
       initializationPromise.current = initializeAuth();
-      initializationPromise.current.then(() => {
-        console.log('Auth initialization promise resolved');
-      }).catch(error => {
-        console.error('Auth initialization promise rejected:', error);
-        // Ensure we still set initialized even on error
-        if (mounted) {
-          setIsInitialized(true);
-        }
-      });
+      initializationPromise.current
+        .then(() => {
+          console.log('Auth initialization promise resolved');
+        })
+        .catch(error => {
+          console.error('Auth initialization promise rejected:', error);
+          if (mounted) {
+            setIsInitialized(true);
+            isInitializing.current = false;
+          }
+        });
     }
 
     return () => {
