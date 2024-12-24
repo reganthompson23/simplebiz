@@ -29,13 +29,6 @@ export function useAuth() {
         if (data && mounted) {
           console.log('Setting user profile:', data);
           setUser(data as User);
-          // Delay navigation slightly to ensure state is updated
-          setTimeout(() => {
-            if (mounted) {
-              console.log('Navigating to dashboard...');
-              navigate('/dashboard', { replace: true });
-            }
-          }, 100);
         } else {
           console.error('No profile data found');
           throw new Error('No profile data found');
@@ -44,7 +37,6 @@ export function useAuth() {
         console.error('Error in fetchAndSetUserProfile:', error);
         if (mounted) {
           setUser(null);
-          navigate('/login', { replace: true });
         }
       }
     };
@@ -71,7 +63,6 @@ export function useAuth() {
         console.error('Error in initializeAuth:', error);
         if (mounted) {
           setUser(null);
-          navigate('/login', { replace: true });
         }
       }
     };
@@ -86,6 +77,7 @@ export function useAuth() {
       try {
         if (event === 'SIGNED_IN' && session?.user) {
           await fetchAndSetUserProfile(session.user.id);
+          navigate('/dashboard', { replace: true });
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           navigate('/login', { replace: true });

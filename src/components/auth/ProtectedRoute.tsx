@@ -11,11 +11,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Check if we have a user or not
-    if (user !== undefined) {
+    const timer = setTimeout(() => {
       setIsLoading(false);
-    }
-  }, [user]);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Show loading state
   if (isLoading) {
@@ -28,7 +29,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Redirect to login if no user
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

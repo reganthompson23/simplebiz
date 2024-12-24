@@ -83,16 +83,6 @@ export default function LoginForm() {
           throw new Error('No user data received after sign in');
         }
 
-        // Force a session refresh
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Session refresh error:', sessionError);
-          throw sessionError;
-        }
-
-        console.log('Session refreshed:', session);
-        
         // Let the auth state change listener handle navigation
         return;
       }
