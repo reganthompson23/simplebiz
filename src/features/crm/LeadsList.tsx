@@ -5,6 +5,7 @@ import { Lead } from '../../types';
 import { Users, Filter, Trash2, ChevronDown } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { toast } from '../../components/ui/Toast';
+import { useAuth } from '../../hooks/useAuth';
 
 const LEAD_STATUSES = {
   open: { label: 'Open', color: 'bg-blue-100 text-blue-800' },
@@ -14,15 +15,19 @@ const LEAD_STATUSES = {
 
 export default function LeadsList() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const { data: leads, isLoading } = useQuery({
-    queryKey: ['leads', selectedStatus],
+    queryKey: ['leads', selectedStatus, user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+
       let query = supabase
         .from('leads')
         .select('*')
+        .eq('profile_id', user.id)
         .order('created_at', { ascending: false });
 
       if (selectedStatus) {
@@ -34,17 +39,21 @@ export default function LeadsList() {
       if (error) throw error;
       return data as Lead[];
     },
+    enabled: !!user?.id,
   });
 
   const updateLeadStatus = useMutation({
     mutationFn: async ({ leadId, status }: { leadId: string; status: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('leads')
         .update({ 
           status,
           updated_at: new Date().toISOString()
         })
-        .eq('id', leadId);
+        .eq('id', leadId)
+        .eq('profile_id', user.id);
 
       if (error) throw error;
     },
@@ -67,10 +76,13 @@ export default function LeadsList() {
 
   const deleteLead = useMutation({
     mutationFn: async (leadId: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('leads')
         .delete()
-        .eq('id', leadId);
+        .eq('id', leadId)
+        .eq('profile_id', user.id);
 
       if (error) throw error;
     },
@@ -91,6 +103,10 @@ export default function LeadsList() {
       });
     },
   });
+
+  if (!user) {
+    return <div>Please log in to view leads.</div>;
+  }
 
   if (isLoading) {
     return (

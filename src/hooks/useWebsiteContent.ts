@@ -2,6 +2,7 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { Website, WebsiteContent } from '../features/website/types';
 import { toast } from '../components/ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 // Helper function to update nested object properties
 function updateNestedValue(obj: any, path: string[], value: any): any {
@@ -21,19 +22,23 @@ function updateNestedValue(obj: any, path: string[], value: any): any {
 
 export function useWebsiteContent(websiteId: string | undefined) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const updateContent = useMutation({
     mutationFn: async ({ path, value }: { path: string[], value: any }) => {
       if (!websiteId) throw new Error('Website ID is required');
+      if (!user?.id) throw new Error('Not authenticated');
 
       // Get current website data
-      const { data: currentWebsite } = await supabase
+      const { data: currentWebsite, error: fetchError } = await supabase
         .from('websites')
         .select('content')
         .eq('id', websiteId)
+        .eq('profile_id', user.id)
         .single();
 
-      if (!currentWebsite) throw new Error('Website not found');
+      if (fetchError) throw fetchError;
+      if (!currentWebsite) throw new Error('Website not found or access denied');
 
       // Update the specific path in the content
       const updatedContent = updateNestedValue(
@@ -50,6 +55,7 @@ export function useWebsiteContent(websiteId: string | undefined) {
           updated_at: new Date().toISOString()
         })
         .eq('id', websiteId)
+        .eq('profile_id', user.id)
         .select()
         .single();
 
@@ -82,14 +88,17 @@ export function useWebsiteContent(websiteId: string | undefined) {
       index?: number 
     }) => {
       if (!websiteId) throw new Error('Website ID is required');
+      if (!user?.id) throw new Error('Not authenticated');
 
-      const { data: currentWebsite } = await supabase
+      const { data: currentWebsite, error: fetchError } = await supabase
         .from('websites')
         .select('content')
         .eq('id', websiteId)
+        .eq('profile_id', user.id)
         .single();
 
-      if (!currentWebsite) throw new Error('Website not found');
+      if (fetchError) throw fetchError;
+      if (!currentWebsite) throw new Error('Website not found or access denied');
 
       // Get the current array
       let currentArray = path.reduce((obj, key) => obj[key], currentWebsite.content);
@@ -126,6 +135,7 @@ export function useWebsiteContent(websiteId: string | undefined) {
           updated_at: new Date().toISOString()
         })
         .eq('id', websiteId)
+        .eq('profile_id', user.id)
         .select()
         .single();
 
