@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 interface LoginFormData {
   email: string;
@@ -11,10 +12,18 @@ interface LoginFormData {
 
 export default function LoginForm() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSignUp, setIsSignUp] = React.useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>();
   const [error, setError] = React.useState<string | null>(null);
   const [isProcessing, setIsProcessing] = React.useState(false);
+
+  // Redirect if user is already logged in
+  React.useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   // Check for email verification status on mount
   React.useEffect(() => {
