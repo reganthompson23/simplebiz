@@ -18,7 +18,7 @@ export const supabase = createClient(
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storage: localStorage,
-      storageKey: 'simplebiz_auth_token'
+      storageKey: 'sb-' + config.supabase.url.split('//')[1].split('.')[0] + '-auth-token'
     },
     realtime: {
       params: {
