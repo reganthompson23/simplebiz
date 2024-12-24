@@ -14,6 +14,7 @@ import ScheduleList from './features/schedule/ScheduleList';
 import ScheduleForm from './features/schedule/ScheduleForm';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import ViewInvoice from './features/invoicing/ViewInvoice';
+import CustomerWebsite from './features/website/CustomerWebsite';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ function App() {
             <Route path="schedule/:id/edit" element={<ScheduleForm />} />
             <Route index element={<Navigate to="website" replace />} />
           </Route>
+          <Route path="/:businessPath" element={<CustomerWebsite />} />
         </Routes>
       </Router>
     </QueryClientProvider>

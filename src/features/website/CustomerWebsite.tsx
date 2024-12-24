@@ -4,6 +4,16 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import WebsitePreview from './WebsitePreview';
 
+interface Website {
+  id: string;
+  content: any;
+  profiles: {
+    id: string;
+  };
+  published: boolean;
+  path: string;
+}
+
 export default function CustomerWebsite() {
   const { businessPath } = useParams();
   
@@ -13,47 +23,56 @@ export default function CustomerWebsite() {
   
   React.useEffect(() => {
     console.log('CustomerWebsite mounted with path:', businessPath);
-    return () => console.log('CustomerWebsite unmounted');
   }, [businessPath]);
 
-  const { data: website, isLoading, error } = useQuery({
+  const { data: website, isLoading, error } = useQuery<Website>({
     queryKey: ['customer-website', businessPath],
     queryFn: async () => {
       if (!businessPath) {
+        console.error('No business path provided');
         throw new Error('No business path provided');
       }
 
       console.log('Fetching website data for path:', businessPath);
-      const { data, error } = await supabase
-        .from('websites')
-        .select('*, profiles(id)')
-        .eq('path', businessPath)
-        .eq('published', true)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('websites')
+          .select('*, profiles(id)')
+          .eq('path', businessPath)
+          .eq('published', true)
+          .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        setErrorMessage(error.message);
-        throw error;
+        console.log('Supabase response:', { data, error });
+
+        if (error) {
+          console.error('Supabase error:', error);
+          setErrorMessage(error.message);
+          throw error;
+        }
+
+        if (!data) {
+          console.error('No website found for path:', businessPath);
+          throw new Error('Website not found');
+        }
+
+        console.log('Website data found:', data);
+        return data;
+      } catch (err) {
+        console.error('Error in queryFn:', err);
+        setHasError(true);
+        setErrorMessage(err instanceof Error ? err.message : 'Unknown error');
+        throw err;
       }
-
-      if (!data) {
-        console.error('No website found for path:', businessPath);
-        throw new Error('Website not found');
-      }
-
-      console.log('Website data found:', data);
-      return data;
     },
     retry: 1,
-    onError: (err) => {
-      console.error('Query error:', err);
-      setHasError(true);
-      setErrorMessage(err.message);
-    }
+    enabled: !!businessPath,
+    gcTime: 1000 * 60 * 30, // 30 minutes
   });
 
+  console.log('Component state:', { isLoading, error, hasError, errorMessage });
+
   if (isLoading) {
+    console.log('Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-gray-500">Loading website...</div>
@@ -62,6 +81,7 @@ export default function CustomerWebsite() {
   }
 
   if (hasError || error || !website) {
+    console.log('Showing error state:', { hasError, error, website });
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Website Not Found</h1>
@@ -80,6 +100,7 @@ export default function CustomerWebsite() {
     );
   }
 
+  console.log('Rendering WebsitePreview with:', website);
   try {
     return (
       <WebsitePreview 
