@@ -21,16 +21,30 @@ export function useAuth() {
           .eq('id', userId)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching profile:', error);
+          throw error;
+        }
+        
         if (data && mounted) {
           console.log('Setting user profile:', data);
           setUser(data as User);
-          navigate('/dashboard');
+          // Delay navigation slightly to ensure state is updated
+          setTimeout(() => {
+            if (mounted) {
+              console.log('Navigating to dashboard...');
+              navigate('/dashboard', { replace: true });
+            }
+          }, 100);
+        } else {
+          console.error('No profile data found');
+          throw new Error('No profile data found');
         }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error in fetchAndSetUserProfile:', error);
         if (mounted) {
           setUser(null);
+          navigate('/login', { replace: true });
         }
       }
     };
@@ -39,7 +53,13 @@ export function useAuth() {
     const initializeAuth = async () => {
       try {
         console.log('Checking initial session');
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session check error:', error);
+          throw error;
+        }
+
         if (session?.user && mounted) {
           console.log('Found existing session:', session.user.id);
           await fetchAndSetUserProfile(session.user.id);
@@ -48,9 +68,10 @@ export function useAuth() {
           setUser(null);
         }
       } catch (error) {
-        console.error('Error checking session:', error);
+        console.error('Error in initializeAuth:', error);
         if (mounted) {
           setUser(null);
+          navigate('/login', { replace: true });
         }
       }
     };
@@ -62,11 +83,19 @@ export function useAuth() {
       console.log('Auth state changed:', event, session?.user?.id);
       if (!mounted) return;
 
-      if (event === 'SIGNED_IN' && session?.user) {
-        await fetchAndSetUserProfile(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        navigate('/login');
+      try {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await fetchAndSetUserProfile(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          navigate('/login', { replace: true });
+        }
+      } catch (error) {
+        console.error('Error in auth state change:', error);
+        if (mounted) {
+          setUser(null);
+          navigate('/login', { replace: true });
+        }
       }
     });
 
