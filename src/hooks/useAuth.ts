@@ -14,6 +14,7 @@ export function useAuth() {
     // Function to fetch and set user profile
     const fetchAndSetUserProfile = async (userId: string) => {
       try {
+        console.log('Fetching user profile for:', userId);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -22,7 +23,9 @@ export function useAuth() {
 
         if (error) throw error;
         if (data && mounted) {
+          console.log('Setting user profile:', data);
           setUser(data as User);
+          navigate('/dashboard');
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -35,10 +38,13 @@ export function useAuth() {
     // Initial session check
     const initializeAuth = async () => {
       try {
+        console.log('Checking initial session');
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && mounted) {
+          console.log('Found existing session:', session.user.id);
           await fetchAndSetUserProfile(session.user.id);
         } else if (mounted) {
+          console.log('No session found');
           setUser(null);
         }
       } catch (error) {
@@ -53,6 +59,7 @@ export function useAuth() {
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
       if (!mounted) return;
 
       if (event === 'SIGNED_IN' && session?.user) {

@@ -27,9 +27,11 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
     setIsProcessing(true);
+    console.log('Starting login/signup process...');
     
     try {
       if (isSignUp) {
+        console.log('Attempting signup...');
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
@@ -41,9 +43,11 @@ export default function LoginForm() {
         });
 
         if (signUpError) throw signUpError;
+        console.log('Signup successful:', signUpData);
 
         // Create profile after successful signup
         if (signUpData.user) {
+          console.log('Creating user profile...');
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -55,16 +59,20 @@ export default function LoginForm() {
             ]);
 
           if (profileError) throw profileError;
+          console.log('Profile created successfully');
           
           // Let the auth state change listener handle navigation
           return;
         }
       } else {
         // Sign in flow
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        console.log('Attempting sign in...');
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         });
+
+        console.log('Sign in response:', signInData);
 
         if (signInError) throw signInError;
         
