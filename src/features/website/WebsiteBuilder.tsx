@@ -226,6 +226,8 @@ export default function WebsiteBuilder() {
       if (!website) throw new Error('No website to publish');
       if (!user?.id) throw new Error('User not authenticated');
       
+      console.log('Publishing website:', website.id);
+      
       const { data, error } = await supabase
         .from('websites')
         .update({ 
@@ -237,12 +239,17 @@ export default function WebsiteBuilder() {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Publish error:', error);
+        throw error;
+      }
+
+      console.log('Website published successfully:', data);
       return data;
     },
     onSuccess: (data) => {
       // Update the website data in the cache with the full response
-      queryClient.setQueryData(['website'], data);
+      queryClient.setQueryData(['website', user?.id], data);
       
       toast({
         title: 'Success',
@@ -254,7 +261,7 @@ export default function WebsiteBuilder() {
       console.error('Publish error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to publish website. Please try again.',
+        description: error.message || 'Failed to publish website. Please try again.',
         type: 'error',
       });
     },
