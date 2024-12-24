@@ -158,21 +158,28 @@ export default function WebsiteBuilder() {
   // Handle saving a field
   const handleSaveField = async (path: string[], value: any) => {
     try {
+      if (!user?.id) throw new Error('User not authenticated');
+      
       await updateField(path, value);
       
-      // If the business name is being updated, also update the website path
+      // If the business name is being updated, also update the website path and subdomain
       if (path[0] === 'businessName' && website?.id) {
         const websitePath = generatePath(value);
-        const { error: pathError } = await supabase
+        const subdomain = generateSubdomain(value);
+        const { error: updateError } = await supabase
           .from('websites')
-          .update({ path: websitePath })
-          .eq('id', website.id);
+          .update({ 
+            path: websitePath,
+            subdomain: subdomain
+          })
+          .eq('id', website.id)
+          .eq('profile_id', user.id);
           
-        if (pathError) throw pathError;
+        if (updateError) throw updateError;
       }
       
       // Refetch the website data to ensure we have the latest state
-      await queryClient.invalidateQueries({ queryKey: ['website'] });
+      await queryClient.invalidateQueries({ queryKey: ['website', user.id] });
       toast({
         title: 'Success',
         description: 'Field updated successfully',
@@ -226,12 +233,16 @@ export default function WebsiteBuilder() {
       if (!website) throw new Error('No website to publish');
       if (!user?.id) throw new Error('User not authenticated');
       
-      console.log('Publishing website:', website.id);
+      // First ensure we have a subdomain and path
+      const subdomain = generateSubdomain(website.content.businessName);
+      const path = generatePath(website.content.businessName);
       
       const { data, error } = await supabase
         .from('websites')
         .update({ 
           published: true,
+          subdomain: subdomain,
+          path: path,
           updated_at: new Date().toISOString()
         })
         .eq('id', website.id)
@@ -239,12 +250,7 @@ export default function WebsiteBuilder() {
         .select()
         .single();
       
-      if (error) {
-        console.error('Publish error:', error);
-        throw error;
-      }
-
-      console.log('Website published successfully:', data);
+      if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
