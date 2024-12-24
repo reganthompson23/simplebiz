@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -6,15 +6,14 @@ import type { User } from '../types';
 
 export function useAuth() {
   const navigate = useNavigate();
-  const { user, setUser } = useAuthStore();
-  const [isInitialized, setIsInitialized] = useState(false);
-  const initializationPromise = useRef<Promise<void> | null>(null);
+  const { user, setUser, isInitialized, setIsInitialized } = useAuthStore();
   const isInitializing = useRef(false);
 
   useEffect(() => {
     let mounted = true;
     console.log('=== useAuth Effect Start ===');
     console.log('Current user state:', user?.id);
+    console.log('Is initialized:', isInitialized);
 
     // Function to fetch and set user profile
     const fetchAndSetUserProfile = async (userId: string) => {
@@ -50,17 +49,25 @@ export function useAuth() {
 
     // Initial session check
     const initializeAuth = async () => {
-      if (!mounted) return;
-      
-      if (isInitializing.current) {
-        console.log('Already initializing, skipping duplicate initialization');
-        return;
-      }
+      if (!mounted || isInitializing.current) return;
       
       isInitializing.current = true;
       console.log('Starting auth initialization...');
       
       try {
+        // First check if we have a persisted user
+        if (user?.id) {
+          console.log('Found persisted user, validating session...');
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session?.user?.id === user.id) {
+            console.log('Persisted user matches session, skipping initialization');
+            setIsInitialized(true);
+            isInitializing.current = false;
+            return;
+          }
+        }
+
         console.log('Getting session from Supabase...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -69,7 +76,6 @@ export function useAuth() {
           throw error;
         }
 
-        console.log('Session result:', session ? 'Found' : 'Not found');
         if (session?.user && mounted) {
           console.log('Valid session found for user:', session.user.id);
           await fetchAndSetUserProfile(session.user.id);
@@ -82,7 +88,7 @@ export function useAuth() {
         if (mounted) setUser(null);
       } finally {
         if (mounted) {
-          console.log('Auth initialization complete, setting isInitialized');
+          console.log('Auth initialization complete');
           setIsInitialized(true);
           isInitializing.current = false;
         }
@@ -100,37 +106,29 @@ export function useAuth() {
         return;
       }
 
-      // Handle all session events
       if (session?.user) {
         console.log('Processing session event for user:', session.user.id);
         await fetchAndSetUserProfile(session.user.id);
-        if (!isInitialized) {
-          setIsInitialized(true);
-        }
       } else {
         console.log('No session in auth change event');
         setUser(null);
-        if (!isInitialized) {
-          setIsInitialized(true);
-        }
+      }
+
+      // Ensure we're initialized after processing any auth event
+      if (!isInitialized) {
+        setIsInitialized(true);
       }
     });
 
-    // Start initialization only if not already initialized
+    // Start initialization if needed
     if (!isInitialized && !isInitializing.current) {
-      console.log('Starting auth initialization process...');
-      initializationPromise.current = initializeAuth();
-      initializationPromise.current
-        .then(() => {
-          console.log('Auth initialization promise resolved');
-        })
-        .catch(error => {
-          console.error('Auth initialization promise rejected:', error);
-          if (mounted) {
-            setIsInitialized(true);
-            isInitializing.current = false;
-          }
-        });
+      initializeAuth().catch(error => {
+        console.error('Auth initialization failed:', error);
+        if (mounted) {
+          setIsInitialized(true);
+          isInitializing.current = false;
+        }
+      });
     }
 
     return () => {
