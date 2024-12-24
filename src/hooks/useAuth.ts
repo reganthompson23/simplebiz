@@ -25,37 +25,13 @@ export function useAuth() {
           .eq('id', userId)
           .single();
 
-        if (error && error.code === 'PGRST116') {
-          console.log('⚠️ Profile not found, creating new profile');
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: userId,
-                business_name: sessionData.session?.user?.user_metadata?.business_name || '',
-                contact_email: sessionData.session?.user?.email || '',
-              }
-            ])
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('❌ Error creating profile:', createError);
-            throw createError;
-          }
-
-          if (newProfile && mounted) {
-            console.log('✅ Setting new user profile:', newProfile);
-            setUser(newProfile as User);
-            return;
-          }
-        } else if (error) {
+        if (error) {
           console.error('❌ Error fetching profile:', error);
           throw error;
         }
         
         if (data && mounted) {
-          console.log('✅ Setting existing user profile:', data);
+          console.log('✅ Setting user profile:', data);
           setUser(data as User);
         } else {
           console.error('❌ No profile data found');
@@ -65,6 +41,7 @@ export function useAuth() {
         console.error('❌ Error in fetchAndSetUserProfile:', error);
         if (mounted) {
           setUser(null);
+          navigate('/login', { replace: true });
         }
       }
     };
@@ -84,14 +61,23 @@ export function useAuth() {
         if (session?.user && mounted) {
           console.log('✅ Found existing session:', session.user.id);
           await fetchAndSetUserProfile(session.user.id);
+          // Only navigate if we're not already on the dashboard
+          if (!window.location.pathname.startsWith('/dashboard')) {
+            navigate('/dashboard', { replace: true });
+          }
         } else if (mounted) {
           console.log('ℹ️ No session found');
           setUser(null);
+          // Only navigate if we're not already on the login page
+          if (window.location.pathname !== '/login') {
+            navigate('/login', { replace: true });
+          }
         }
       } catch (error) {
         console.error('❌ Error in initializeAuth:', error);
         if (mounted) {
           setUser(null);
+          navigate('/login', { replace: true });
         }
       }
     };
@@ -112,8 +98,10 @@ export function useAuth() {
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('🎯 Processing SIGNED_IN event for user:', session.user.id);
           await fetchAndSetUserProfile(session.user.id);
-          console.log('🚀 Navigating to dashboard');
-          navigate('/dashboard', { replace: true });
+          // Only navigate if we're not already on the dashboard
+          if (!window.location.pathname.startsWith('/dashboard')) {
+            navigate('/dashboard', { replace: true });
+          }
         } else if (event === 'SIGNED_OUT') {
           console.log('👋 Processing SIGNED_OUT event');
           setUser(null);
