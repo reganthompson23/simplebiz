@@ -10,135 +10,63 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
-    console.log('🔄 useAuth effect running, current user:', user?.id);
 
     // Function to fetch and set user profile
     const fetchAndSetUserProfile = async (userId: string) => {
       try {
-        console.log('📥 Fetching user profile for:', userId);
-        const { data: sessionData } = await supabase.auth.getSession();
-        console.log('📦 Current session data:', sessionData);
-
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .single();
 
-        if (error) {
-          console.error('❌ Error fetching profile:', error);
-          throw error;
-        }
-        
+        if (error) throw error;
         if (data && mounted) {
-          console.log('✅ Setting user profile:', data);
           setUser(data as User);
-        } else {
-          console.error('❌ No profile data found');
-          throw new Error('No profile data found');
         }
       } catch (error) {
-        console.error('❌ Error in fetchAndSetUserProfile:', error);
-        if (mounted) {
-          setUser(null);
-          // Clear any stale session data
-          await supabase.auth.signOut();
-          navigate('/login', { replace: true });
-        }
+        console.error('Error fetching profile:', error);
+        if (mounted) setUser(null);
       }
     };
 
     // Initial session check
     const initializeAuth = async () => {
-      try {
-        console.log('🔍 Checking initial session');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('📦 Initial session:', session?.user?.id);
-        
-        if (error) {
-          console.error('❌ Session check error:', error);
-          throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user && mounted) {
+        await fetchAndSetUserProfile(session.user.id);
+        // Only redirect to dashboard if we're on the login page
+        if (window.location.pathname === '/login') {
+          navigate('/dashboard', { replace: true });
         }
-
-        if (session?.user && mounted) {
-          console.log('✅ Found existing session:', session.user.id);
-          // Verify the session is still valid
-          const { data: { user: currentUser }, error: refreshError } = await supabase.auth.getUser();
-          
-          if (refreshError || !currentUser) {
-            console.log('⚠️ Session expired, clearing...');
-            await supabase.auth.signOut();
-            setUser(null);
-            navigate('/login', { replace: true });
-            return;
-          }
-
-          await fetchAndSetUserProfile(session.user.id);
-          // Only navigate if we're not already on the dashboard
-          if (!window.location.pathname.startsWith('/dashboard')) {
-            navigate('/dashboard', { replace: true });
-          }
-        } else if (mounted) {
-          console.log('ℹ️ No session found');
-          setUser(null);
-          // Clear any stale session data
-          await supabase.auth.signOut();
-          // Only navigate if we're not already on the login page
-          if (window.location.pathname !== '/login') {
-            navigate('/login', { replace: true });
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error in initializeAuth:', error);
-        if (mounted) {
-          setUser(null);
-          // Clear any stale session data
-          await supabase.auth.signOut();
-          navigate('/login', { replace: true });
-        }
+      } else if (mounted && !window.location.pathname.startsWith('/dashboard')) {
+        setUser(null);
       }
     };
 
     initializeAuth();
 
     // Set up auth state change listener
-    console.log('🎧 Setting up auth state change listener');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔔 Auth state changed:', event);
-      console.log('📦 Session in state change:', session?.user?.id);
-      if (!mounted) {
-        console.log('⚠️ Component unmounted, ignoring auth change');
-        return;
-      }
+      if (!mounted) return;
 
-      try {
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('🎯 Processing SIGNED_IN event for user:', session.user.id);
-          await fetchAndSetUserProfile(session.user.id);
-          // Only navigate if we're not already on the dashboard
-          if (!window.location.pathname.startsWith('/dashboard')) {
-            navigate('/dashboard', { replace: true });
-          }
-        } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          console.log('👋 Processing SIGNED_OUT/TOKEN_REFRESHED event');
-          setUser(null);
-          if (event === 'SIGNED_OUT') {
-            navigate('/login', { replace: true });
-          }
+      if (event === 'SIGNED_IN' && session?.user) {
+        await fetchAndSetUserProfile(session.user.id);
+        // Only redirect to dashboard if we're on the login page
+        if (window.location.pathname === '/login') {
+          navigate('/dashboard', { replace: true });
         }
-      } catch (error) {
-        console.error('❌ Error in auth state change:', error);
-        if (mounted) {
-          setUser(null);
-          // Clear any stale session data
-          await supabase.auth.signOut();
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        // Only redirect to login if we're on a protected route
+        if (window.location.pathname.startsWith('/dashboard')) {
           navigate('/login', { replace: true });
         }
       }
     });
 
     return () => {
-      console.log('🧹 Cleaning up useAuth effect');
       mounted = false;
       subscription.unsubscribe();
     };
