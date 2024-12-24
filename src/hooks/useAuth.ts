@@ -9,6 +9,7 @@ export function useAuth() {
   const { user, setUser } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const initializationPromise = useRef<Promise<void> | null>(null);
+  const isInitializing = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -49,9 +50,11 @@ export function useAuth() {
 
     // Initial session check
     const initializeAuth = async () => {
-      if (!mounted) return;
+      if (!mounted || isInitializing.current) return;
       
+      isInitializing.current = true;
       console.log('Starting auth initialization...');
+      
       try {
         console.log('Getting session from Supabase...');
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -76,6 +79,7 @@ export function useAuth() {
         if (mounted) {
           console.log('Auth initialization complete, setting isInitialized');
           setIsInitialized(true);
+          isInitializing.current = false;
         }
       }
     };
@@ -91,16 +95,20 @@ export function useAuth() {
         return;
       }
 
-      // Wait for any ongoing initialization to complete
-      if (initializationPromise.current) {
-        console.log('Waiting for initialization to complete...');
-        await initializationPromise.current;
+      // For INITIAL_SESSION, let the initialization handle it
+      if (event === 'INITIAL_SESSION') {
+        console.log('Received INITIAL_SESSION event, waiting for initialization...');
+        if (!isInitialized && !isInitializing.current) {
+          await initializeAuth();
+        }
+        return;
       }
 
+      // For other events, process them directly
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('Processing SIGNED_IN event for user:', session.user.id);
-        const success = await fetchAndSetUserProfile(session.user.id);
-        if (success && !isInitialized) {
+        await fetchAndSetUserProfile(session.user.id);
+        if (!isInitialized) {
           setIsInitialized(true);
         }
       } else if (event === 'SIGNED_OUT') {
@@ -114,12 +122,18 @@ export function useAuth() {
 
     // Start initialization
     console.log('Starting auth initialization process...');
-    initializationPromise.current = initializeAuth();
-    initializationPromise.current.then(() => {
-      console.log('Auth initialization promise resolved');
-    }).catch(error => {
-      console.error('Auth initialization promise rejected:', error);
-    });
+    if (!isInitialized && !isInitializing.current) {
+      initializationPromise.current = initializeAuth();
+      initializationPromise.current.then(() => {
+        console.log('Auth initialization promise resolved');
+      }).catch(error => {
+        console.error('Auth initialization promise rejected:', error);
+        // Ensure we still set initialized even on error
+        if (mounted) {
+          setIsInitialized(true);
+        }
+      });
+    }
 
     return () => {
       console.log('=== useAuth Effect Cleanup ===');
