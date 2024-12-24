@@ -7,31 +7,46 @@ import { DollarSign, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { formatCurrency } from '../../utils/formatters';
 import { toast } from '../../components/ui/Toast';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function ExpenseList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data: expenses, isLoading, error } = useQuery({
-    queryKey: ['expenses'],
+    queryKey: ['expenses', user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
+        .eq('profile_id', user.id)
         .order('date', { ascending: false });
       
       if (error) throw error;
       return data as Expense[];
     },
+    enabled: !!user?.id,
   });
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
+    if (!user?.id) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to delete expenses',
+        type: 'error',
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from('expenses')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('profile_id', user.id);
 
       if (error) throw error;
 
@@ -48,6 +63,10 @@ export default function ExpenseList() {
       });
     }
   };
+
+  if (!user) {
+    return <div>Please log in to view expenses.</div>;
+  }
 
   if (error) {
     return (

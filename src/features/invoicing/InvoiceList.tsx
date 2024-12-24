@@ -7,17 +7,22 @@ import { FileText, Plus, Download, Send, Eye, Pencil } from 'lucide-react';
 import { PDFDownloadLink, BlobProvider } from '@react-pdf/renderer';
 import InvoicePDF from './InvoicePDF';
 import { formatCurrency } from '../../lib/utils';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function InvoiceList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   const { data: invoices, isLoading } = useQuery({
-    queryKey: ['invoices'],
+    queryKey: ['invoices', user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+
       const { data: invoicesData, error: invoicesError } = await supabase
         .from('invoices')
         .select('*')
+        .eq('profile_id', user.id)
         .order('created_at', { ascending: false });
 
       if (invoicesError) throw invoicesError;
@@ -40,7 +45,8 @@ export default function InvoiceList() {
       );
 
       return invoicesWithItems as Invoice[];
-    }
+    },
+    enabled: !!user?.id,
   });
 
   const getStatusColor = (status: string) => {
@@ -73,6 +79,10 @@ export default function InvoiceList() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <div>Please log in to view invoices.</div>;
   }
 
   return (

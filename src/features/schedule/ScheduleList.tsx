@@ -6,23 +6,29 @@ import { Schedule } from '../../types';
 import { Calendar, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { toast } from '../../components/ui/Toast';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function ScheduleList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showPastJobs, setShowPastJobs] = useState(false);
 
   const { data: schedules, isLoading, error } = useQuery({
-    queryKey: ['schedules'],
+    queryKey: ['schedules', user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
+        .eq('profile_id', user.id)
         .order('schedule_date', { ascending: true })
         .order('start_time', { ascending: true });
       
       if (error) throw error;
       return data as Schedule[];
     },
+    enabled: !!user?.id,
   });
 
   const formatDateTime = (date: string, time: string) => {
@@ -49,12 +55,21 @@ export default function ScheduleList() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this schedule?')) return;
+    if (!user?.id) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to delete schedules',
+        type: 'error',
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from('schedules')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('profile_id', user.id);
 
       if (error) throw error;
 
@@ -71,6 +86,10 @@ export default function ScheduleList() {
       });
     }
   };
+
+  if (!user) {
+    return <div>Please log in to view schedules.</div>;
+  }
 
   if (error) {
     return (
