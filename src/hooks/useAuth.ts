@@ -9,6 +9,7 @@ export function useAuth() {
   const { user, setUser, isInitialized, setIsInitialized, cleanup } = useAuthStore();
   const isInitializing = useRef(false);
   const refreshTimeout = useRef<NodeJS.Timeout>();
+  const hasInitialized = useRef(false);
 
   // Function to refresh session
   const refreshSession = async () => {
@@ -38,7 +39,7 @@ export function useAuth() {
     return null;
   };
 
-  // Handle page refresh
+  // Handle page refresh and visibility
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (refreshTimeout.current) {
@@ -46,10 +47,9 @@ export function useAuth() {
       }
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // Refresh session when tab becomes visible again
-        refreshSession();
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && !isInitializing.current) {
+        await refreshSession();
       }
     };
 
@@ -65,123 +65,93 @@ export function useAuth() {
     };
   }, []);
 
+  // Function to fetch and set user profile
+  const fetchAndSetUserProfile = async (userId: string) => {
+    if (!userId) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setUser(data as User);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error in fetchAndSetUserProfile:', error);
+      setUser(null);
+      return false;
+    }
+  };
+
+  // Main auth effect
   useEffect(() => {
     let mounted = true;
-    console.log('=== useAuth Effect Start ===');
-    console.log('Current user state:', user?.id);
-
-    // Function to fetch and set user profile
-    const fetchAndSetUserProfile = async (userId: string) => {
-      console.log('Fetching profile...', userId);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (error) {
-          console.error('Profile fetch error:', error);
-          throw error;
-        }
-        if (data && mounted) {
-          console.log('Profile found:', data.id);
-          setUser(data as User);
-          return true;
-        } else {
-          console.log('No profile data found');
-          return false;
-        }
-      } catch (error) {
-        console.error('Error in fetchAndSetUserProfile:', error);
-        if (mounted) {
-          console.log('Setting user to null due to error');
-          setUser(null);
-        }
-        return false;
-      }
-    };
-
-    // Initial session check
-    const initializeAuth = async () => {
-      if (!mounted || isInitializing.current) return;
-      
-      isInitializing.current = true;
-      console.log('Starting auth initialization...');
-      
-      try {
-        const session = await refreshSession();
-        
-        if (session?.user && mounted) {
-          console.log('Valid session found for user:', session.user.id);
-          await fetchAndSetUserProfile(session.user.id);
-        } else if (mounted) {
-          console.log('No valid session found');
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        if (mounted) setUser(null);
-      } finally {
-        if (mounted) {
-          console.log('Auth initialization complete');
-          setIsInitialized(true);
-          isInitializing.current = false;
-        }
-      }
-    };
-
+    
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('=== Auth State Change ===');
-      console.log('Event:', event);
-      console.log('Session exists:', !!session);
+      if (!mounted || isInitializing.current) return;
       
-      if (!mounted) {
-        console.log('Component unmounted, ignoring auth change');
-        return;
-      }
-
-      if (session?.user) {
-        console.log('Processing session event for user:', session.user.id);
-        await fetchAndSetUserProfile(session.user.id);
-        
-        // Set up refresh timer when session changes
-        const expiresAt = session.expires_at;
-        if (expiresAt) {
-          const timeUntilExpire = new Date(expiresAt * 1000).getTime() - Date.now();
-          const refreshTime = Math.max(0, timeUntilExpire - (5 * 60 * 1000)); // 5 minutes before expiry
+      console.log('Auth State Change:', event, !!session);
+      
+      try {
+        if (session?.user) {
+          await fetchAndSetUserProfile(session.user.id);
           
-          if (refreshTimeout.current) {
-            clearTimeout(refreshTimeout.current);
+          // Set up refresh timer
+          const expiresAt = session.expires_at;
+          if (expiresAt) {
+            const timeUntilExpire = new Date(expiresAt * 1000).getTime() - Date.now();
+            const refreshTime = Math.max(0, timeUntilExpire - (5 * 60 * 1000));
+            
+            if (refreshTimeout.current) {
+              clearTimeout(refreshTimeout.current);
+            }
+            
+            refreshTimeout.current = setTimeout(refreshSession, refreshTime);
           }
-          
-          refreshTimeout.current = setTimeout(refreshSession, refreshTime);
+        } else {
+          setUser(null);
         }
-      } else {
-        console.log('No session in auth change event');
-        setUser(null);
-      }
-
-      // Ensure we're initialized after processing any auth event
-      if (!isInitialized) {
-        setIsInitialized(true);
+      } finally {
+        if (!hasInitialized.current) {
+          setIsInitialized(true);
+          hasInitialized.current = true;
+        }
       }
     });
 
-    // Start initialization if needed
-    if (!isInitialized && !isInitializing.current) {
-      initializeAuth().catch(error => {
-        console.error('Auth initialization failed:', error);
+    // Initial auth check
+    const initializeAuth = async () => {
+      if (hasInitialized.current || isInitializing.current) return;
+      
+      isInitializing.current = true;
+      try {
+        const session = await refreshSession();
+        if (session?.user && mounted) {
+          await fetchAndSetUserProfile(session.user.id);
+        } else if (mounted) {
+          setUser(null);
+        }
+      } finally {
         if (mounted) {
           setIsInitialized(true);
+          hasInitialized.current = true;
           isInitializing.current = false;
         }
-      });
-    }
+      }
+    };
+
+    // Run initial auth check
+    initializeAuth();
 
     return () => {
-      console.log('=== useAuth Effect Cleanup ===');
       mounted = false;
       if (refreshTimeout.current) {
         clearTimeout(refreshTimeout.current);
