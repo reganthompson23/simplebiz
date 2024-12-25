@@ -34,7 +34,7 @@ export default function Layout() {
       <div className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200">
         <div className="flex flex-col h-full">
           <div className="flex h-16 items-center px-4 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-900">LiteBiz</h1>
+            <h1 className="text-xl font-bold text-gray-900">litebiz</h1>
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navigation.map((item) => {

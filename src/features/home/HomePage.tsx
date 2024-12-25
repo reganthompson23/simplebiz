@@ -96,7 +96,7 @@ export default function HomePage() {
         {/* Navigation */}
         <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-gray-900">LiteBiz</span>
+            <span className="text-xl font-bold text-gray-900">litebiz</span>
           </div>
           <div className="flex items-center gap-4">
             <Button
@@ -134,7 +134,7 @@ export default function HomePage() {
                 <span className="text-blue-600 font-medium">expenses</span>
                 , and{' '}
                 <span className="text-blue-600 font-medium">schedule</span>
-                {' '}jobs. LiteBiz brings all of this together in the world's simplest business app.
+                {' '}jobs. litebiz brings all of this together in the world's simplest business app.
               </p>
               <div className="mt-10 flex items-center gap-x-6">
                 <Button
@@ -193,7 +193,7 @@ export default function HomePage() {
               Five Essential Tools in One Simple App
             </p>
             <p className="mt-6 text-lg leading-8 text-gray-600">
-              Stop juggling multiple apps and spreadsheets. LiteBiz brings together all the tools you need to run your business efficiently.
+              Stop juggling multiple apps and spreadsheets. litebiz brings together all the tools you need to run your business efficiently.
             </p>
           </div>
           <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
@@ -218,7 +218,7 @@ export default function HomePage() {
       <div className="bg-gray-50 py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl lg:text-center">
-            <h2 className="text-base font-semibold leading-7 text-blue-600">Why Choose LiteBiz</h2>
+            <h2 className="text-base font-semibold leading-7 text-blue-600">Why Choose litebiz</h2>
             <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
               Built for Business Owners, Not Accountants
             </p>
@@ -244,7 +244,7 @@ export default function HomePage() {
               Start Managing Your Business Better Today
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">
-              Join thousands of business owners who are saving time and growing their businesses with LiteBiz.
+              Join thousands of business owners who are saving time and growing their businesses with litebiz.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button
