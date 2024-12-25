@@ -8,16 +8,52 @@ export function useAuth() {
   const navigate = useNavigate();
   const { user, setUser, isInitialized, setIsInitialized, cleanup } = useAuthStore();
   const isInitializing = useRef(false);
+  const refreshTimeout = useRef<NodeJS.Timeout>();
+
+  // Function to refresh session
+  const refreshSession = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      
+      if (session?.user) {
+        // Refresh the session 5 minutes before it expires
+        const expiresAt = session.expires_at;
+        if (expiresAt) {
+          const timeUntilExpire = new Date(expiresAt * 1000).getTime() - Date.now();
+          const refreshTime = Math.max(0, timeUntilExpire - (5 * 60 * 1000)); // 5 minutes before expiry
+          
+          if (refreshTimeout.current) {
+            clearTimeout(refreshTimeout.current);
+          }
+          
+          refreshTimeout.current = setTimeout(refreshSession, refreshTime);
+        }
+        
+        return session;
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+    }
+    return null;
+  };
 
   // Handle page refresh
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // This will run when the page is about to refresh
+      if (refreshTimeout.current) {
+        clearTimeout(refreshTimeout.current);
+      }
       cleanup();
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      if (refreshTimeout.current) {
+        clearTimeout(refreshTimeout.current);
+      }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [cleanup]);
 
   useEffect(() => {
@@ -65,14 +101,8 @@ export function useAuth() {
       console.log('Starting auth initialization...');
       
       try {
-        console.log('Getting session from Supabase...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const session = await refreshSession();
         
-        if (error) {
-          console.error('Session fetch error:', error);
-          throw error;
-        }
-
         if (session?.user && mounted) {
           console.log('Valid session found for user:', session.user.id);
           await fetchAndSetUserProfile(session.user.id);
@@ -106,6 +136,19 @@ export function useAuth() {
       if (session?.user) {
         console.log('Processing session event for user:', session.user.id);
         await fetchAndSetUserProfile(session.user.id);
+        
+        // Set up refresh timer when session changes
+        const expiresAt = session.expires_at;
+        if (expiresAt) {
+          const timeUntilExpire = new Date(expiresAt * 1000).getTime() - Date.now();
+          const refreshTime = Math.max(0, timeUntilExpire - (5 * 60 * 1000)); // 5 minutes before expiry
+          
+          if (refreshTimeout.current) {
+            clearTimeout(refreshTimeout.current);
+          }
+          
+          refreshTimeout.current = setTimeout(refreshSession, refreshTime);
+        }
       } else {
         console.log('No session in auth change event');
         setUser(null);
@@ -131,6 +174,9 @@ export function useAuth() {
     return () => {
       console.log('=== useAuth Effect Cleanup ===');
       mounted = false;
+      if (refreshTimeout.current) {
+        clearTimeout(refreshTimeout.current);
+      }
       subscription.unsubscribe();
     };
   }, []); // Only run on mount
