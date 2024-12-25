@@ -44,17 +44,26 @@ export function useAuth() {
       if (refreshTimeout.current) {
         clearTimeout(refreshTimeout.current);
       }
-      cleanup();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Refresh session when tab becomes visible again
+        refreshSession();
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     return () => {
       if (refreshTimeout.current) {
         clearTimeout(refreshTimeout.current);
       }
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [cleanup]);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
