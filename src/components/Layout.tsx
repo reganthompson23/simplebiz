@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from './ui/Button';
-import { useAuth } from '../hooks/useAuth';
 import {
   LayoutGrid,
   Users,
@@ -15,18 +14,10 @@ import {
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { ensureConnection } = useAuth();
 
   const handleSignOut = async () => {
-    try {
-      await ensureConnection();
-      await supabase.auth.signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      // If sign out fails, force a page refresh as fallback
-      window.location.href = '/login';
-    }
+    await supabase.auth.signOut();
+    navigate('/login');
   };
 
   const navigation = [

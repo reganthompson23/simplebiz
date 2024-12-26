@@ -10,24 +10,6 @@ export function useAuth() {
   const isInitializing = useRef(false);
   const refreshTimeout = useRef<NodeJS.Timeout>();
   const hasInitialized = useRef(false);
-  const connectionRef = useRef<boolean>(true);
-
-  // Function to ensure connection
-  const ensureConnection = async () => {
-    try {
-      if (!connectionRef.current) {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (!error && session) {
-          connectionRef.current = true;
-          return true;
-        }
-      }
-      return connectionRef.current;
-    } catch (error) {
-      console.error('Connection check error:', error);
-      return false;
-    }
-  };
 
   // Function to refresh session
   const refreshSession = async () => {
@@ -36,7 +18,6 @@ export function useAuth() {
       if (error) throw error;
       
       if (session?.user) {
-        connectionRef.current = true;
         const expiresAt = session.expires_at;
         if (expiresAt) {
           const timeUntilExpire = new Date(expiresAt * 1000).getTime() - Date.now();
@@ -53,12 +34,11 @@ export function useAuth() {
       }
     } catch (error) {
       console.error('Error refreshing session:', error);
-      connectionRef.current = false;
     }
     return null;
   };
 
-  // Handle page refresh and visibility
+  // Handle page refresh
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (refreshTimeout.current) {
@@ -66,27 +46,12 @@ export function useAuth() {
       }
     };
 
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
-        connectionRef.current = false;
-        if (!isInitializing.current) {
-          const session = await refreshSession();
-          if (session?.user) {
-            await fetchAndSetUserProfile(session.user.id);
-          }
-        }
-      }
-    };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
     return () => {
       if (refreshTimeout.current) {
         clearTimeout(refreshTimeout.current);
       }
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
@@ -95,10 +60,6 @@ export function useAuth() {
     if (!userId) return false;
     
     try {
-      if (!await ensureConnection()) {
-        throw new Error('No connection');
-      }
-
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -129,7 +90,6 @@ export function useAuth() {
       
       try {
         if (session?.user) {
-          connectionRef.current = true;
           await fetchAndSetUserProfile(session.user.id);
           
           // Set up refresh timer
@@ -188,5 +148,5 @@ export function useAuth() {
     };
   }, []);
 
-  return { user, isInitialized, ensureConnection };
+  return { user, isInitialized };
 }
