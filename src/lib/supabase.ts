@@ -18,7 +18,8 @@ export const supabase = createClient(
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storage: localStorage,
-      storageKey: 'sb-' + config.supabase.url.split('//')[1].split('.')[0] + '-auth-token'
+      storageKey: 'sb-' + config.supabase.url.split('//')[1].split('.')[0] + '-auth-token',
+      flowType: 'pkce'
     },
     global: {
       headers: {
@@ -27,7 +28,7 @@ export const supabase = createClient(
     },
     realtime: {
       params: {
-        eventsPerSecond: 0
+        eventsPerSecond: 1
       }
     },
     db: {
@@ -35,3 +36,31 @@ export const supabase = createClient(
     }
   }
 );
+
+// Add reconnection handler
+let reconnectTimeout: NodeJS.Timeout;
+
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_IN') {
+    // Clear any existing timeout
+    if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    
+    // Set up reconnection check
+    const checkConnection = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // If no session, try to reconnect
+          await supabase.auth.refreshSession();
+        }
+      } catch (error) {
+        console.error('Connection check error:', error);
+      }
+      // Schedule next check
+      reconnectTimeout = setTimeout(checkConnection, 30000); // Check every 30 seconds
+    };
+    
+    // Start checking
+    checkConnection();
+  }
+});
