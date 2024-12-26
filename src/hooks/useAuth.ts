@@ -38,7 +38,7 @@ export function useAuth() {
     return null;
   };
 
-  // Handle page refresh
+  // Handle page refresh and visibility
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (refreshTimeout.current) {
@@ -46,12 +46,27 @@ export function useAuth() {
       }
     };
 
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        // Reconnect Supabase client
+        await supabase.realtime.connect();
+        // Refresh session
+        const session = await refreshSession();
+        if (session?.user) {
+          await fetchAndSetUserProfile(session.user.id);
+        }
+      }
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     return () => {
       if (refreshTimeout.current) {
         clearTimeout(refreshTimeout.current);
       }
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
