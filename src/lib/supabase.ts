@@ -20,15 +20,18 @@ export const supabase = createClient(
       storage: localStorage,
       storageKey: 'sb-' + config.supabase.url.split('//')[1].split('.')[0] + '-auth-token'
     },
-    realtime: {
-      params: {
-        eventsPerSecond: 10
-      }
-    },
     global: {
       headers: {
         'x-client-info': 'simplebiz'
       }
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 0
+      }
+    },
+    db: {
+      schema: 'public'
     }
   }
 );
