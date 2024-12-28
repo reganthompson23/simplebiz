@@ -7,6 +7,7 @@ import { Invoice, InvoiceItem } from '../../types';
 import { formatCurrency } from '../../lib/utils';
 import { Plus, Trash2, Save, Send } from 'lucide-react';
 import { toast } from '../../components/ui/Toast';
+import { useAuth } from '../../hooks/useAuth';
 
 interface InvoiceFormData {
   fromDetails: {
@@ -41,6 +42,7 @@ export default function CreateInvoice() {
   const { id: invoiceId } = useParams();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   // Fetch existing invoice data if editing
   const { data: existingInvoice, isLoading: isLoadingInvoice } = useQuery({
@@ -125,9 +127,12 @@ export default function CreateInvoice() {
     mutationFn: async (data: InvoiceFormData) => {
       setIsSubmitting(true);
       try {
+        if (!user) throw new Error('Not authenticated');
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('id')
+          .eq('id', user.id)
           .single();
 
         if (!profile) throw new Error('Profile not found');
