@@ -37,54 +37,60 @@ export const supabase = createClient(
   }
 );
 
-// Add reconnection handler with more frequent checks
-let reconnectTimeout: NodeJS.Timeout;
-let lastActiveTimestamp = Date.now();
+// Track connection state
+let isConnected = false;
 
-// Track user activity
-const updateLastActive = () => {
-  lastActiveTimestamp = Date.now();
+// Function to ensure connection
+const ensureConnection = async () => {
+  try {
+    if (!isConnected) {
+      await supabase.realtime.connect();
+      isConnected = true;
+    }
+  } catch (error) {
+    console.error('Connection error:', error);
+    isConnected = false;
+  }
 };
 
-// Add activity listeners
-window.addEventListener('mousemove', updateLastActive);
-window.addEventListener('keydown', updateLastActive);
-window.addEventListener('click', updateLastActive);
-window.addEventListener('scroll', updateLastActive);
-window.addEventListener('visibilitychange', () => {
+// Handle connection state changes
+const channel = supabase.channel('system');
+channel
+  .on('system', { event: 'presence_state' }, () => {
+    isConnected = true;
+  })
+  .subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      isConnected = true;
+    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+      isConnected = false;
+      // Try to reconnect
+      ensureConnection();
+    }
+  });
+
+// Handle visibility changes
+document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible') {
-    updateLastActive();
+    // Reset connection state
+    isConnected = false;
+    // Force a new connection
+    await ensureConnection();
+    
+    // Get a fresh session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      // Refresh the session
+      await supabase.auth.refreshSession();
+    }
   }
 });
 
-supabase.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_IN') {
-    // Clear any existing timeout
-    if (reconnectTimeout) clearTimeout(reconnectTimeout);
-    
-    // Set up reconnection check
-    const checkConnection = async () => {
-      try {
-        // Only check connection if user has been active in the last 30 minutes
-        if (Date.now() - lastActiveTimestamp < 30 * 60 * 1000) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            // If no session, try to reconnect
-            await supabase.auth.refreshSession();
-          }
-          // Ensure realtime connection
-          if (!supabase.realtime.isConnected()) {
-            await supabase.realtime.connect();
-          }
-        }
-      } catch (error) {
-        console.error('Connection check error:', error);
-      }
-      // Schedule next check - more frequent checks (every 15 seconds)
-      reconnectTimeout = setTimeout(checkConnection, 15000);
-    };
-    
-    // Start checking
-    checkConnection();
-  }
-});
+// Initial connection
+ensureConnection();
+
+// Export connection check function for use in components
+export const checkConnection = async () => {
+  await ensureConnection();
+  return isConnected;
+};
