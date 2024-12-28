@@ -40,19 +40,6 @@ export const supabase = createClient(
 // Track connection state
 let isConnected = false;
 
-// Function to ensure connection
-const ensureConnection = async () => {
-  try {
-    if (!isConnected) {
-      await supabase.realtime.connect();
-      isConnected = true;
-    }
-  } catch (error) {
-    console.error('Connection error:', error);
-    isConnected = false;
-  }
-};
-
 // Handle connection state changes
 const channel = supabase.channel('system');
 channel
@@ -64,33 +51,10 @@ channel
       isConnected = true;
     } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
       isConnected = false;
-      // Try to reconnect
-      ensureConnection();
     }
   });
 
-// Handle visibility changes
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible') {
-    // Reset connection state
-    isConnected = false;
-    // Force a new connection
-    await ensureConnection();
-    
-    // Get a fresh session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      // Refresh the session
-      await supabase.auth.refreshSession();
-    }
-  }
-});
-
-// Initial connection
-ensureConnection();
-
 // Export connection check function for use in components
 export const checkConnection = async () => {
-  await ensureConnection();
   return isConnected;
 };
