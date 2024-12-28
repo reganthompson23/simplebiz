@@ -7,19 +7,19 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Retry failed queries
+      // Retry failed queries with exponential backoff
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       
-      // Refetch on window focus
-      refetchOnWindowFocus: true,
+      // More conservative refetch settings
+      refetchOnWindowFocus: false, // Disable automatic refetch on window focus
       refetchOnReconnect: true,
       
       // Keep data fresh
-      staleTime: 30000, // Consider data fresh for 30 seconds
-      gcTime: 1000 * 60 * 5, // Keep unused data in cache for 5 minutes
+      staleTime: 60000, // Consider data fresh for 60 seconds
+      gcTime: 1000 * 60 * 10, // Keep unused data in cache for 10 minutes
       
-      // Ensure queries refetch when coming back to tab
+      // Disable background refetching
       refetchInterval: false,
       refetchIntervalInBackground: false,
     },

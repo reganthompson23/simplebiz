@@ -37,8 +37,25 @@ export const supabase = createClient(
   }
 );
 
-// Add reconnection handler
+// Add reconnection handler with more frequent checks
 let reconnectTimeout: NodeJS.Timeout;
+let lastActiveTimestamp = Date.now();
+
+// Track user activity
+const updateLastActive = () => {
+  lastActiveTimestamp = Date.now();
+};
+
+// Add activity listeners
+window.addEventListener('mousemove', updateLastActive);
+window.addEventListener('keydown', updateLastActive);
+window.addEventListener('click', updateLastActive);
+window.addEventListener('scroll', updateLastActive);
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    updateLastActive();
+  }
+});
 
 supabase.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_IN') {
@@ -48,16 +65,23 @@ supabase.auth.onAuthStateChange((event) => {
     // Set up reconnection check
     const checkConnection = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          // If no session, try to reconnect
-          await supabase.auth.refreshSession();
+        // Only check connection if user has been active in the last 30 minutes
+        if (Date.now() - lastActiveTimestamp < 30 * 60 * 1000) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            // If no session, try to reconnect
+            await supabase.auth.refreshSession();
+          }
+          // Ensure realtime connection
+          if (!supabase.realtime.isConnected()) {
+            await supabase.realtime.connect();
+          }
         }
       } catch (error) {
         console.error('Connection check error:', error);
       }
-      // Schedule next check
-      reconnectTimeout = setTimeout(checkConnection, 30000); // Check every 30 seconds
+      // Schedule next check - more frequent checks (every 15 seconds)
+      reconnectTimeout = setTimeout(checkConnection, 15000);
     };
     
     // Start checking

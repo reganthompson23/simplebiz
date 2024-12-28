@@ -48,12 +48,27 @@ export function useAuth() {
 
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
-        // Reconnect Supabase client
-        await supabase.realtime.connect();
-        // Refresh session
-        const session = await refreshSession();
-        if (session?.user) {
-          await fetchAndSetUserProfile(session.user.id);
+        try {
+          // First ensure realtime connection
+          await supabase.realtime.connect();
+          
+          // Then check and refresh session if needed
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            await supabase.auth.refreshSession();
+          } else {
+            // Even with session, refresh to ensure it's current
+            await refreshSession();
+          }
+          
+          // If we have a user after refresh, update profile
+          if (session?.user) {
+            await fetchAndSetUserProfile(session.user.id);
+          }
+        } catch (error) {
+          console.error('Error reconnecting:', error);
+          // If we hit an error, try to get a fresh session
+          await refreshSession();
         }
       }
     };
