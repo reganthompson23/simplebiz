@@ -19,7 +19,8 @@ export const supabase = createClient(
       detectSessionInUrl: true,
       storage: localStorage,
       storageKey: 'sb-' + config.supabase.url.split('//')[1].split('.')[0] + '-auth-token',
-      flowType: 'pkce'
+      flowType: 'pkce',
+      debug: true
     },
     global: {
       headers: {
@@ -28,10 +29,14 @@ export const supabase = createClient(
     },
     realtime: {
       params: {
-        eventsPerSecond: 1
+        eventsPerSecond: 10
       },
-      reconnectAfterMs: (retries: number) => Math.min(1000 * (retries + 1), 10000),
-      timeout: 60000
+      timeout: 120000,
+      reconnectAfterMs: (retries: number) => {
+        const delay = Math.min(500 * Math.pow(2, retries), 5000);
+        console.log(`Supabase reconnecting in ${delay}ms (attempt ${retries + 1})`);
+        return delay;
+      }
     },
     db: {
       schema: 'public'
@@ -39,61 +44,35 @@ export const supabase = createClient(
   }
 );
 
-// Initialize realtime connection
+let isReconnecting = false;
+
 const channel = supabase.channel('system');
 
-// Keep track of reconnection attempts
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-
-const connect = () => {
-  console.log('Connecting to Supabase realtime...');
-  supabase.realtime.connect();
-  reconnectAttempts = 0;
-};
-
-const scheduleReconnect = () => {
-  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-    console.log('Max reconnection attempts reached, giving up');
-    return;
-  }
-  
-  const delay = Math.min(1000 * (2 ** reconnectAttempts), 10000);
-  console.log(`Scheduling reconnect attempt ${reconnectAttempts + 1} in ${delay}ms`);
-  
-  setTimeout(() => {
-    reconnectAttempts++;
-    connect();
-  }, delay);
-};
-
 channel
-  .on('system', { event: 'connected' }, () => {
-    console.log('Supabase realtime connected, channel:', channel.state);
-    reconnectAttempts = 0;
-  })
-  .on('system', { event: 'disconnected' }, () => {
-    console.log('Supabase realtime disconnected, channel:', channel.state);
-    scheduleReconnect();
-  })
   .subscribe((status) => {
-    console.log('Channel subscription status:', status);
     if (status === 'SUBSCRIBED') {
-      reconnectAttempts = 0;
-    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-      scheduleReconnect();
+      console.log('Supabase realtime connected');
+      isReconnecting = false;
+    }
+    if (status === 'CLOSED') {
+      console.log('Supabase realtime disconnected');
+      if (!isReconnecting) {
+        isReconnecting = true;
+        setTimeout(() => {
+          console.log('Forcing Supabase realtime reconnection');
+          channel.subscribe();
+          isReconnecting = false;
+        }, 1000);
+      }
     }
   });
 
-// Initialize connection
-connect();
-
-// Export connection check function for use in components
-export const checkConnection = async () => {
+export const checkConnection = () => {
   const isConnected = supabase.realtime.isConnected();
-  console.log('Connection check:', isConnected);
-  if (!isConnected) {
-    connect();
+  console.log('Supabase realtime connection status:', isConnected);
+  if (!isConnected && !isReconnecting) {
+    console.log('Connection lost, attempting to reconnect...');
+    channel.subscribe();
   }
-  return supabase.realtime.isConnected();
+  return isConnected;
 };
