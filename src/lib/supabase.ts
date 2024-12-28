@@ -42,33 +42,58 @@ export const supabase = createClient(
 // Initialize realtime connection
 const channel = supabase.channel('system');
 
+// Keep track of reconnection attempts
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+
+const connect = () => {
+  console.log('Connecting to Supabase realtime...');
+  supabase.realtime.connect();
+  reconnectAttempts = 0;
+};
+
+const scheduleReconnect = () => {
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    console.log('Max reconnection attempts reached, giving up');
+    return;
+  }
+  
+  const delay = Math.min(1000 * (2 ** reconnectAttempts), 10000);
+  console.log(`Scheduling reconnect attempt ${reconnectAttempts + 1} in ${delay}ms`);
+  
+  setTimeout(() => {
+    reconnectAttempts++;
+    connect();
+  }, delay);
+};
+
 channel
   .on('system', { event: 'connected' }, () => {
     console.log('Supabase realtime connected, channel:', channel.state);
+    reconnectAttempts = 0;
   })
   .on('system', { event: 'disconnected' }, () => {
     console.log('Supabase realtime disconnected, channel:', channel.state);
-    // Attempt to reconnect
-    setTimeout(() => {
-      console.log('Attempting to reconnect...');
-      supabase.realtime.connect();
-    }, 1000);
+    scheduleReconnect();
   })
   .subscribe((status) => {
     console.log('Channel subscription status:', status);
+    if (status === 'SUBSCRIBED') {
+      reconnectAttempts = 0;
+    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+      scheduleReconnect();
+    }
   });
 
 // Initialize connection
-console.log('Initializing Supabase realtime connection...');
-supabase.realtime.connect();
+connect();
 
 // Export connection check function for use in components
 export const checkConnection = async () => {
   const isConnected = supabase.realtime.isConnected();
   console.log('Connection check:', isConnected);
   if (!isConnected) {
-    console.log('Not connected, attempting to connect...');
-    await supabase.realtime.connect();
+    connect();
   }
   return supabase.realtime.isConnected();
 };
