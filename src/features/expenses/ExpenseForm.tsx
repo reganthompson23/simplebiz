@@ -12,21 +12,19 @@ export default function ExpenseForm() {
   const navigate = useNavigate();
   const { id: expenseId } = useParams();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user?.id) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please log in to manage expenses',
-        type: 'error',
-      });
-      navigate('/dashboard/expenses');
-      return;
-    }
-  }, [user, navigate]);
+  // Wait for auth to be initialized before checking user state
+  if (!isInitialized) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
+  // Only redirect if auth is initialized and there's no user
+  if (isInitialized && !user?.id) {
+    navigate('/login');
+    return null;
+  }
 
   // Basic form state
   const [formData, setFormData] = useState({
@@ -144,12 +142,7 @@ export default function ExpenseForm() {
     }
 
     if (!user?.id) {
-      toast({
-        title: 'Authentication Error',
-        description: 'Please log in to create expenses',
-        type: 'error',
-      });
-      navigate('/dashboard/expenses');
+      navigate('/login');
       return;
     }
 
