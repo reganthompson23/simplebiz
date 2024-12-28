@@ -23,7 +23,7 @@ export default function ExpenseForm() {
         description: 'Please log in to manage expenses',
         type: 'error',
       });
-      navigate('/login');
+      navigate('/dashboard/expenses');
       return;
     }
   }, [user, navigate]);
@@ -149,7 +149,7 @@ export default function ExpenseForm() {
         description: 'Please log in to create expenses',
         type: 'error',
       });
-      navigate('/login');
+      navigate('/dashboard/expenses');
       return;
     }
 
