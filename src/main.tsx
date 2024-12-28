@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
-import { checkConnection } from './lib/supabase';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -14,8 +13,8 @@ const queryClient = new QueryClient({
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       
       // Handle connection changes
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
       
       // Keep data fresh
       staleTime: 60000, // Consider data fresh for 60 seconds
@@ -26,20 +25,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// Add connection check on focus/reconnect
-window.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible') {
-    await checkConnection();
-    // Invalidate all queries to force a refresh
-    queryClient.invalidateQueries();
-  }
-});
-
-// Add connection check on mount
-if (document.visibilityState === 'visible') {
-  checkConnection();
-}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

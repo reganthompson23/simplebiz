@@ -37,24 +37,14 @@ export const supabase = createClient(
   }
 );
 
-// Track connection state
-let isConnected = false;
-
-// Handle connection state changes
-const channel = supabase.channel('system');
-channel
-  .on('system', { event: 'presence_state' }, () => {
-    isConnected = true;
-  })
-  .subscribe((status) => {
-    if (status === 'SUBSCRIBED') {
-      isConnected = true;
-    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-      isConnected = false;
-    }
-  });
+// Initialize realtime connection
+supabase.realtime.connect();
 
 // Export connection check function for use in components
 export const checkConnection = async () => {
-  return isConnected;
+  const isConnected = supabase.realtime.isConnected();
+  if (!isConnected) {
+    await supabase.realtime.connect();
+  }
+  return supabase.realtime.isConnected();
 };
