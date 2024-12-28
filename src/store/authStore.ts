@@ -19,12 +19,12 @@ export const useAuthStore = create<AuthState>()(
       isInitialized: false,
       setIsInitialized: (isInitialized) => set({ isInitialized }),
       cleanup: async () => {
-        // Sign out from Supabase
+        // Sign out from Supabase (this handles Supabase's own storage cleanup)
         await supabase.auth.signOut();
         // Clear our store
         set({ user: null, isInitialized: false });
-        // Clear localStorage
-        localStorage.clear();
+        // Only remove our specific storage key
+        localStorage.removeItem('auth-storage');
       },
     }),
     {
