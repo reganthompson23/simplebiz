@@ -40,54 +40,24 @@ export function useAuth() {
 
   // Handle page refresh and visibility
   useEffect(() => {
-    console.log('Setting up visibility change handlers');
+    console.log('TEST: Setting up visibility listeners');
 
-    const handleBeforeUnload = () => {
-      console.log('beforeunload triggered');
-      if (refreshTimeout.current) {
-        clearTimeout(refreshTimeout.current);
-      }
+    // Basic test listener
+    const testVisibility = () => {
+      console.log('TEST: Document visibility changed to:', document.visibilityState);
+      console.log('TEST: Hidden?', document.hidden);
+      console.log('TEST: Active element:', document.activeElement);
     };
 
-    const handleVisibilityChange = async () => {
-      console.log('Visibility changed:', document.visibilityState);
-      console.log('Current user state:', user);
-      
-      if (document.visibilityState === 'visible') {
-        console.log('Tab became visible, checking session...');
-        try {
-          // Only refresh if we detect we're actually disconnected
-          const { data: { session }, error } = await supabase.auth.getSession();
-          console.log('getSession result:', { session, error });
-          
-          if (!session) {
-            console.log('No session found, attempting refresh...');
-            const refreshResult = await supabase.auth.refreshSession();
-            console.log('refreshSession result:', refreshResult);
-          }
-          // If we have a session and user, ensure profile is current
-          if (session?.user) {
-            console.log('Session exists, fetching profile...');
-            await fetchAndSetUserProfile(session.user.id);
-          }
-        } catch (error) {
-          console.error('Error in visibility change:', error);
-        }
-      } else {
-        console.log('Tab hidden, current connection state:', supabase.realtime.isConnected());
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Add both types of listeners to see which (if any) fire
+    document.addEventListener('visibilitychange', testVisibility, false);
+    window.addEventListener('blur', () => console.log('TEST: Window blur'), false);
+    window.addEventListener('focus', () => console.log('TEST: Window focus'), false);
     
     return () => {
-      console.log('Cleaning up visibility change handlers');
-      if (refreshTimeout.current) {
-        clearTimeout(refreshTimeout.current);
-      }
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', testVisibility);
+      window.removeEventListener('blur', () => console.log('TEST: Window blur'));
+      window.removeEventListener('focus', () => console.log('TEST: Window focus'));
     };
   }, []);
 
