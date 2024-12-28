@@ -49,17 +49,28 @@ export function useAuth() {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
         try {
-          // Only refresh if we detect we're actually disconnected
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            await supabase.auth.refreshSession();
-          }
-          // If we have a session and user, ensure profile is current
-          if (session?.user) {
+          // Always check session validity when returning to tab
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) throw error;
+
+          if (!session || !session.user) {
+            // No session or invalid session, try to refresh
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) throw refreshError;
+            
+            if (refreshData.session?.user) {
+              await fetchAndSetUserProfile(refreshData.session.user.id);
+            } else {
+              setUser(null);
+            }
+          } else {
+            // Valid session exists, ensure profile is current
             await fetchAndSetUserProfile(session.user.id);
           }
         } catch (error) {
           console.error('Error checking session:', error);
+          // On error, clear user state
+          setUser(null);
         }
       }
     };

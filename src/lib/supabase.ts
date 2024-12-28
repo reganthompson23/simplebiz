@@ -38,6 +38,22 @@ export const supabase = createClient(
 );
 
 // Initialize realtime connection
+const channel = supabase.channel('system');
+
+channel
+  .on('system', { event: 'connected' }, () => {
+    console.log('Realtime connected');
+  })
+  .on('system', { event: 'disconnected' }, () => {
+    console.log('Realtime disconnected');
+    // Attempt to reconnect
+    setTimeout(() => {
+      supabase.realtime.connect();
+    }, 1000);
+  })
+  .subscribe();
+
+// Initialize connection
 supabase.realtime.connect();
 
 // Export connection check function for use in components
