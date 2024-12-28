@@ -29,7 +29,9 @@ export const supabase = createClient(
     realtime: {
       params: {
         eventsPerSecond: 1
-      }
+      },
+      reconnectAfterMs: (retries: number) => Math.min(1000 * (retries + 1), 10000),
+      timeout: 60000
     },
     db: {
       schema: 'public'

@@ -13,13 +13,13 @@ const queryClient = new QueryClient({
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       
       // Handle connection changes
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      refetchOnMount: true,
+      refetchOnMount: false,
       
-      // Keep data fresh
-      staleTime: 0, // Consider data always stale
-      gcTime: 1000 * 60 * 10, // Keep unused data in cache for 10 minutes
+      // Keep data fresh but not too aggressive
+      staleTime: 1000 * 60,
+      gcTime: 1000 * 60 * 10,
     },
   },
 });
