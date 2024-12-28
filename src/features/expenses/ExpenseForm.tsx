@@ -15,17 +15,6 @@ export default function ExpenseForm() {
   const { user, isInitialized } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
-  // Wait for auth to be initialized before checking user state
-  if (!isInitialized) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
-  // Only redirect if auth is initialized and there's no user
-  if (isInitialized && !user?.id) {
-    navigate('/login');
-    return null;
-  }
-
   // Basic form state
   const [formData, setFormData] = useState({
     amount: '',
@@ -91,6 +80,17 @@ export default function ExpenseForm() {
       });
     }
   }, [existingExpense]);
+
+  // Wait for auth to be initialized before checking user state
+  if (!isInitialized) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
+  // Only redirect if auth is initialized and there's no user
+  if (!user?.id) {
+    navigate('/login');
+    return null;
+  }
 
   // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
