@@ -42,24 +42,30 @@ const channel = supabase.channel('system');
 
 channel
   .on('system', { event: 'connected' }, () => {
-    console.log('Realtime connected');
+    console.log('Supabase realtime connected, channel:', channel.state);
   })
   .on('system', { event: 'disconnected' }, () => {
-    console.log('Realtime disconnected');
+    console.log('Supabase realtime disconnected, channel:', channel.state);
     // Attempt to reconnect
     setTimeout(() => {
+      console.log('Attempting to reconnect...');
       supabase.realtime.connect();
     }, 1000);
   })
-  .subscribe();
+  .subscribe((status) => {
+    console.log('Channel subscription status:', status);
+  });
 
 // Initialize connection
+console.log('Initializing Supabase realtime connection...');
 supabase.realtime.connect();
 
 // Export connection check function for use in components
 export const checkConnection = async () => {
   const isConnected = supabase.realtime.isConnected();
+  console.log('Connection check:', isConnected);
   if (!isConnected) {
+    console.log('Not connected, attempting to connect...');
     await supabase.realtime.connect();
   }
   return supabase.realtime.isConnected();

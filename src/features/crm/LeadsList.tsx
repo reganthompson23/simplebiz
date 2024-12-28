@@ -22,22 +22,30 @@ export default function LeadsList() {
   const { data: leads, isLoading } = useQuery({
     queryKey: ['leads', selectedStatus, user?.id],
     queryFn: async () => {
+      console.log('Fetching leads, user:', user?.id);
       if (!user?.id) return [];
 
-      let query = supabase
-        .from('leads')
-        .select('*')
-        .eq('profile_id', user.id)
-        .order('created_at', { ascending: false });
+      try {
+        let query = supabase
+          .from('leads')
+          .select('*')
+          .eq('profile_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (selectedStatus) {
-        query = query.eq('status', selectedStatus);
+        if (selectedStatus) {
+          query = query.eq('status', selectedStatus);
+        }
+
+        console.log('Executing Supabase query...');
+        const { data, error } = await query;
+        console.log('Query result:', { data, error });
+        
+        if (error) throw error;
+        return data as Lead[];
+      } catch (error) {
+        console.error('Error fetching leads:', error);
+        throw error;
       }
-
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data as Lead[];
     },
     enabled: !!user?.id,
   });

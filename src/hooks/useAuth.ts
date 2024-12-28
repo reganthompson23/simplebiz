@@ -40,38 +40,41 @@ export function useAuth() {
 
   // Handle page refresh and visibility
   useEffect(() => {
+    console.log('Setting up visibility change handlers');
+
     const handleBeforeUnload = () => {
+      console.log('beforeunload triggered');
       if (refreshTimeout.current) {
         clearTimeout(refreshTimeout.current);
       }
     };
 
     const handleVisibilityChange = async () => {
+      console.log('Visibility changed:', document.visibilityState);
+      console.log('Current user state:', user);
+      
       if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, checking session...');
         try {
-          // Always check session validity when returning to tab
+          // Only refresh if we detect we're actually disconnected
           const { data: { session }, error } = await supabase.auth.getSession();
-          if (error) throw error;
-
-          if (!session || !session.user) {
-            // No session or invalid session, try to refresh
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            if (refreshError) throw refreshError;
-            
-            if (refreshData.session?.user) {
-              await fetchAndSetUserProfile(refreshData.session.user.id);
-            } else {
-              setUser(null);
-            }
-          } else {
-            // Valid session exists, ensure profile is current
+          console.log('getSession result:', { session, error });
+          
+          if (!session) {
+            console.log('No session found, attempting refresh...');
+            const refreshResult = await supabase.auth.refreshSession();
+            console.log('refreshSession result:', refreshResult);
+          }
+          // If we have a session and user, ensure profile is current
+          if (session?.user) {
+            console.log('Session exists, fetching profile...');
             await fetchAndSetUserProfile(session.user.id);
           }
         } catch (error) {
-          console.error('Error checking session:', error);
-          // On error, clear user state
-          setUser(null);
+          console.error('Error in visibility change:', error);
         }
+      } else {
+        console.log('Tab hidden, current connection state:', supabase.realtime.isConnected());
       }
     };
 
@@ -79,6 +82,7 @@ export function useAuth() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
+      console.log('Cleaning up visibility change handlers');
       if (refreshTimeout.current) {
         clearTimeout(refreshTimeout.current);
       }
