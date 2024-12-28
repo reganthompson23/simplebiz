@@ -15,6 +15,19 @@ export default function ExpenseForm() {
   const { user } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user?.id) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to manage expenses',
+        type: 'error',
+      });
+      navigate('/login');
+      return;
+    }
+  }, [user, navigate]);
+
   // Basic form state
   const [formData, setFormData] = useState({
     amount: '',
@@ -82,7 +95,7 @@ export default function ExpenseForm() {
   }, [existingExpense]);
 
   // Handle input changes
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -121,7 +134,7 @@ export default function ExpenseForm() {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted with data:', formData);
 
@@ -168,7 +181,10 @@ export default function ExpenseForm() {
       } else {
         result = await supabase
           .from('expenses')
-          .insert(expenseData)
+          .insert({
+            ...expenseData,
+            profile_id: user.id
+          })
           .select()
           .single();
       }
@@ -182,13 +198,13 @@ export default function ExpenseForm() {
       });
 
       await queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      navigate('/expenses');
+      navigate('/dashboard/expenses');
 
     } catch (error) {
       console.error('Form submission error:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to save expense',
+        description: error instanceof Error ? error.message : 'Failed to save expense',
         type: 'error',
       });
     }
@@ -208,7 +224,7 @@ export default function ExpenseForm() {
       <div className="mb-6">
         <Button
           variant="ghost"
-          onClick={() => navigate('/expenses')}
+          onClick={() => navigate('/dashboard/expenses')}
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -310,7 +326,7 @@ export default function ExpenseForm() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/expenses')}
+            onClick={() => navigate('/dashboard/expenses')}
           >
             Cancel
           </Button>

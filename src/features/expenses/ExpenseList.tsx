@@ -88,7 +88,7 @@ export default function ExpenseList() {
               <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
             </div>
             <Button
-              onClick={() => navigate('/expenses/new')}
+              onClick={() => navigate('/dashboard/expenses/new')}
               className="inline-flex items-center"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -104,7 +104,7 @@ export default function ExpenseList() {
             <p className="mb-4">No expenses recorded yet.</p>
             <Button
               variant="outline"
-              onClick={() => navigate('/expenses/new')}
+              onClick={() => navigate('/dashboard/expenses/new')}
               className="inline-flex items-center"
             >
               <Plus className="h-4 w-4 mr-2" />
